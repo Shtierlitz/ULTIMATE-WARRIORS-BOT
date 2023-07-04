@@ -2,6 +2,7 @@
 
 
 from aiogram.utils import executor
+from aiogram.utils.exceptions import NetworkError
 
 import db
 from handlers import member, admin, other, player_data
@@ -21,5 +22,10 @@ player_data.register_handlers_player(dp)
 # other.register_handlers_other(dp)  # хендлеры без команд нужно импортировать последними
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True,
+    while True:
+        try:
+            executor.start_polling(dp, skip_updates=True,
                            on_startup=on_startup)  # нужно чтоб не завалило спамом когда он не активный
+        except NetworkError as e:
+            print(f"Произошла ошибка сервера: {e}")
+            continue

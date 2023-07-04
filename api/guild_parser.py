@@ -1,4 +1,5 @@
 # api/guild_parser.py
+import os
 
 import requests
 import json
@@ -23,9 +24,10 @@ guild_url = "/g/0rNNFa76RXyv0C3suyUkFA/"
 
 guild_profile = requests.get("http://api.swgoh.gg/guild-profile/0rNNFa76RXyv0C3suyUkFA")
 
-show_guild_members(guild_profile)
 
-def show_player_data(request:requests):
+# show_guild_members(guild_profile)
+
+def show_player_data(request: requests):
     if request.status_code == 200:
         data = request.json()
         # print(data['data'].items())
@@ -34,4 +36,34 @@ def show_player_data(request:requests):
 
 
 player_search = requests.get(f'http://api.swgoh.gg/player/{my_ally_code}/')
+
+
 # show_player_data(player_search)
+
+
+def sync_player(request: requests):
+    print(request.status_code)
+
+
+# sync = requests.post(
+#     f'http://api.swgoh.gg/players/{my_ally_code}/trigger-sync/',
+#     auth=(os.environ.get("USER_NAME"), os.environ.get("USER_PASSWORD"))
+# )
+# sync_player(sync)
+
+
+def make_json_ids():
+    ar = []
+
+    with open('ids.txt', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()  # Удалить пробельные символы в начале и конце строки
+            if line:  # Если строка не пустая
+                key, value = line.split(': ')  # Разделить строку по ': '
+                ar.append({key: value})  # Добавить словарь в список
+
+    with open('ids.json', 'w', encoding='utf-8') as e:
+        json.dump(ar, e, indent=4, ensure_ascii=False)
+
+
+# make_json_ids()

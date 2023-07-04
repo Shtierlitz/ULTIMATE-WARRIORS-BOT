@@ -14,14 +14,17 @@ def create_keyboard():
     players = session.query(Player).filter(func.date(Player.update_time) == today).all()
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 
-    row_btns = []
-    for i, player in enumerate(players, 1):
+    keyboard.row(KeyboardButton("cencel"))  # Создать отдельную строку для кнопки "cencel"
+
+
+    row_btns = []  # Создать список для кнопок строк
+
+    for i, player in enumerate(players):
         button = KeyboardButton(f"/{player.name}")  # Создать кнопку с именем игрока
         row_btns.append(button)  # Добавить кнопку в список кнопок для строки
-        if i % 4 == 0:  # Если количество кнопок в строке достигло 4
+        if (i + 1) % 2 == 0:  # Если количество кнопок в строке достигло 4
             keyboard.row(*row_btns)  # Добавить строку кнопок на клавиатуру
             row_btns = []  # Очистить список кнопок для строки
-
     if row_btns:  # Если есть оставшиеся кнопки
         keyboard.row(*row_btns)  # Добавить оставшиеся кнопки на клавиатуру
 
@@ -34,13 +37,17 @@ def create_player_info_keyboard(player_name: str):
     today = date.today()  # текущая дата
     player = session.query(Player).filter(func.date(Player.update_time) == today, Player.name == player_name).first()
     if player:
-        row_btns = []
+        keyboard.row(KeyboardButton("cencel"))  # Создать отдельную строку для кнопки "cencel"
+        keyboard.row(KeyboardButton("all_data"))
+
+        row_btns = []  # Создать список для кнопок строк
         for index, column in enumerate(Player.__table__.columns):  # Получить все поля модели Player
             button = KeyboardButton(column.name)  # Создать кнопку с именем поля
             row_btns.append(button)
-            if (index + 1) % 3 == 0:  # Если это каждая 4-ая кнопка
+            if (index + 1) % 2 == 0:  # Если это каждая 4-ая кнопка
                 keyboard.row(*row_btns)  # Добавить ряд кнопок на клавиатуру
                 row_btns = []  # Очистить список кнопок для следующего ряда
+
         if row_btns:  # Если есть оставшиеся кнопки
             keyboard.row(*row_btns)  # Добавить оставшиеся кнопки на клавиатуру
 

@@ -1,6 +1,9 @@
 # api_utils.py
+import json
 
 import requests
+from sqlalchemy import func
+
 from create_bot import session
 from datetime import datetime, timedelta
 from db_models import Player
@@ -17,20 +20,34 @@ def player_data_by_code(ally_code: int):
         return data['data']
 
 
+def add_ids():
+    with open("./api/ids.json", encoding="utf-8") as f:
+        data = json.load(f)  # Загрузить список словарей
+
+    result = {}  # Создать пустой словарь
+
+    for d in data:  # Пройтись по всем словарям в списке
+        for key, value in d.items():  # Пройтись по всем парам ключ-значение в словаре
+            result[key] = value  # Добавить ключ и значение в результат
+
+    return result
+
+
 def create_or_update_player_data(data: dict):
     """Создает или обновляет данные пользователя на текущий день"""
     # Проверка наличия пользователя в базе данных
-    # Проверка наличия пользователя в базе данных
-    existing_user_today = session.query(Player).filter_by(name=data['name'],
-                                                          update_time=datetime.today().date()).first()
+    existing_user_today = session.query(Player).filter_by(name=data['name']).filter(
+        func.date(Player.update_time) == datetime.today().date()).first()
     existing_user_older = session.query(Player).filter_by(name=data['name']).filter(
-        Player.update_time < datetime.today().date()).first()
+        func.date(Player.update_time) < datetime.today().date()).first()
 
+    ids = add_ids()
     # Если пользователь уже существует
 
     if existing_user_today:
-        print('existing_user_today сработало')
         # Обновляем данные пользователя
+        existing_user_today.player_id = ids[data['name']]
+        existing_user_today.update_time = datetime.utcnow()
         existing_user_today.ally_code = data['ally_code']
         existing_user_today.arena_leader_base_id = data['arena_leader_base_id']
         existing_user_today.arena_rank = data['arena_rank']
@@ -54,7 +71,7 @@ def create_or_update_player_data(data: dict):
         existing_user_today.season_banners_earned = data['season_banners_earned']
         existing_user_today.season_offensive_battles_won = data['season_offensive_battles_won']
         existing_user_today.season_territories_defeated = data['season_territories_defeated']
-        existing_user_today.url = 'https://swgoh.gg'+data['url']
+        existing_user_today.url = 'https://swgoh.gg' + data['url']
         existing_user_today.skill_rating = data['skill_rating']
         existing_user_today.division_number = data['division_number']
         existing_user_today.league_name = data['league_name']
@@ -66,12 +83,12 @@ def create_or_update_player_data(data: dict):
         existing_user_today.title = data['title']
         existing_user_today.guild_id = data['guild_id']
         existing_user_today.guild_name = data['guild_name']
-        existing_user_today.guild_url = 'https://swgoh.gg'+data['guild_url']
+        existing_user_today.guild_url = 'https://swgoh.gg' + data['guild_url']
         session.commit()
-    else:
-        print('else сработал')
+    elif existing_user_older:
         # Добавляем нового пользователя
         new_user = Player(
+            player_id=ids[data['name']],
             ally_code=data['ally_code'],
             arena_leader_base_id=data['arena_leader_base_id'],
             arena_rank=data['arena_rank'],
@@ -97,7 +114,7 @@ def create_or_update_player_data(data: dict):
             season_banners_earned=data['season_banners_earned'],
             season_offensive_battles_won=data['season_offensive_battles_won'],
             season_territories_defeated=data['season_territories_defeated'],
-            url='https://swgoh.gg'+data['url'],
+            url='https://swgoh.gg' + data['url'],
             skill_rating=data['skill_rating'],
             division_number=data['division_number'],
             league_name=data['league_name'],
@@ -121,6 +138,8 @@ def create_or_update_player_data(data: dict):
 
 
 def update_players_data():
+    """Вытаскивает данные о гильдии и участниках, а после
+     по имени участника гоняет циклом обновление бд для каждого участника"""
     guild_profile = requests.get("http://api.swgoh.gg/guild-profile/0rNNFa76RXyv0C3suyUkFA")
     if guild_profile.status_code == 200:
         data = guild_profile.json()
@@ -130,6 +149,12 @@ def update_players_data():
 
 
 def extract_data(player: Player):
+    """Выводит все данные по игроку"""
     data_dict = player.__dict__
-    formatted_string = "\n".join(f"{key}: {value}" for key, value in data_dict.items() if not key.startswith('_'))
+    formatted_string = "\n".join(f"{key}: {value}\n{'-'*30}" for key, value in data_dict.items() if not key.startswith('_'))
     return formatted_string
+
+
+def get_player_filtered_data(data: Player, key: str):
+    """Возвращает данные игрока по ключу"""
+    return data.__dict__[key]
