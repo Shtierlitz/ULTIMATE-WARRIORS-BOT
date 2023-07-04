@@ -5,16 +5,41 @@ from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 
 
+class Guild(Base):
+    __tablename__ = 'guild'
+    name = Column(String(50))
+    external_message = Column(String(500))
+    galactic_power = Column(Integer)
+    level_requirement = Column(Integer)
+    member_count = Column(Integer)
+    avg_galactic_power = Column(Integer)
+    avg_arena_rank = Column(Integer)
+    avg_fleet_arena_rank = Column(Integer)
+    avg_skill_rating = Column(Integer)
+    last_sync = Column(DateTime, default=datetime.utcnow)
+    guild_id = Column(String(500))
+    enrollment_status = Column(Integer)
+    banner_color_id = Column(String(50))
+    banner_logo_id = Column(String(50))
+    guild_type = Column(Integer)
+    id = Column(Integer, primary_key=True)
+
+    def __str__(self):
+        return f"{self.name}'s {self.update_time} data."
+
+
 class Player(Base):
     __tablename__ = 'players'
+    ally_code = Column(Integer)
+    name = Column(String(100))
+    level = Column(Integer)
     update_time = Column(DateTime, default=datetime.utcnow)
+    guild_join_time = Column(DateTime, default=datetime.utcnow)
+    arena_rank = Column(Integer)
+    url = Column(String(5000))
     id = Column(Integer, primary_key=True)
     player_id = Column(Integer)
-    ally_code = Column(Integer)
     arena_leader_base_id = Column(String(50))
-    arena_rank = Column(Integer)
-    level = Column(Integer)
-    name = Column(String(100))
     last_updated = Column(DateTime, default=datetime.utcnow)
     galactic_power = Column(Integer)
     character_galactic_power = Column(Integer)
@@ -35,7 +60,6 @@ class Player(Base):
     season_banners_earned = Column(Integer)
     season_offensive_battles_won = Column(Integer)
     season_territories_defeated = Column(Integer)
-    url = Column(String(5000))
     skill_rating = Column(Integer)
     division_number = Column(Integer)
     league_name = Column(String(100))
@@ -48,8 +72,6 @@ class Player(Base):
     guild_id = Column(String(100))
     guild_name = Column(String(100))
     guild_url = Column(String(100))
-
-    # guild_join_time = Column(DateTime, default=datetime.utcnow)
 
     def __str__(self):
         return f"{self.name}'s {self.update_time} data."

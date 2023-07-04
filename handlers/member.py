@@ -1,7 +1,7 @@
 # handlers/member.py
 import os
 
-from api_utils import extract_data, update_players_data
+from api_utils import PlayerData, GuildData
 from create_bot import bot, session
 from aiogram import types, Dispatcher
 import asyncio
@@ -25,7 +25,7 @@ async def command_start(message: types.Message):
     try:
         await bot.send_message(message.chat.id, "Начинаем работу.\nОбновляем базу данных...\nПодождите...")
         loop = asyncio.get_event_loop()
-        loop.run_in_executor(executor, update_players_data)
+        loop.run_in_executor(executor, PlayerData().update_players_data)
         await bot.send_message(message.chat.id, "База данных обновляется в фоне.\nМожно приступать к работе.")
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
@@ -33,11 +33,15 @@ async def command_start(message: types.Message):
 
 async def command_help(message: types.Message):
     """Выводит инфо о командах"""
+    GuildData().get_guild_data()
     try:
         commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
         await bot.send_message(message.chat.id, f"Список доступных команд:\n\n{commands}")
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
+
+
 
 
 async def get_user_data(message: types.Message):
@@ -46,7 +50,7 @@ async def get_user_data(message: types.Message):
     print(player_name)
     try:
         player = session.query(Player).filter_by(name=player_name).first()
-        player_str_list = extract_data(player)
+        player_str_list = PlayerData().extract_data(player)
         await bot.send_message(message.chat.id, player_str_list)
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")

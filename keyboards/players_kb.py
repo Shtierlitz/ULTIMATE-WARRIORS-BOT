@@ -37,7 +37,7 @@ def create_player_info_keyboard(player_name: str):
     today = date.today()  # текущая дата
     player = session.query(Player).filter(func.date(Player.update_time) == today, Player.name == player_name).first()
     if player:
-        keyboard.row(KeyboardButton("cencel"))  # Создать отдельную строку для кнопки "cencel"
+        keyboard.row(KeyboardButton("back"), KeyboardButton("cencel")) # Создать отдельную строку для кнопки "cencel"
         keyboard.row(KeyboardButton("all_data"))
 
         row_btns = []  # Создать список для кнопок строк
