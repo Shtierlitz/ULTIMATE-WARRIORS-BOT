@@ -60,6 +60,7 @@ class PlayerData:
     def __set_player_attributes(self, player, data):
         ids = self.__add_ids()
 
+        player.name = data['name']
         player.guild_join_time = datetime.strptime(data['guild_join_time'], '%Y-%m-%dT%H:%M:%S')
         player.player_id = ids[data['name']]
         player.update_time = datetime.utcnow()
@@ -70,6 +71,7 @@ class PlayerData:
         player.last_updated = datetime.strptime(data['last_updated'], '%Y-%m-%dT%H:%M:%S')
         player.galactic_power = data['galactic_power']
         player.character_galactic_power = data['character_galactic_power']
+        player.ship_galactic_power = data['ship_galactic_power']
         player.ship_battles_won = data['ship_battles_won']
         player.pvp_battles_won = data['pvp_battles_won']
         player.pve_battles_won = data['pve_battles_won']
@@ -141,3 +143,44 @@ class GuildData:
         guild = Guild()
 
 
+def gac_statistic():
+    current_date = datetime.now().date()
+    players_list = session.query(Player).filter(func.date(Player.update_time) == current_date)
+    result = []
+    count_true = 0
+    count_false = 0
+    link_pre = 'https://swgoh.gg/p/'
+    for i in players_list:
+        request = requests.get(f"http://api.swgoh.gg/player/{i.ally_code}/gac-bracket/")
+
+        if request.status_code == 200:
+            data = request.json()
+
+            message = f"{i.name} зареган. Противники: \n"
+            bracket_players = data['data']['bracket_players']
+            temp_list = []
+
+            for j in bracket_players:
+                if j['player_name'] == i.name:
+                    pass
+                else:
+                    st = f"[{j['player_name']}]({link_pre}{j['ally_code']})"
+                    temp_list.append(st)
+
+            message += ", ".join(temp_list)
+            result.append(message)
+            count_true += 1
+        else:
+            result.append(f'{i.name} не зареган')
+            count_false += 1
+
+    result.append(f"Зареганных всего: {count_true}")
+    result.append(f"Завтыкали: {count_false}")
+    st_1, st_2, st_3, st_4, st_5 = split_list(result)
+    return f'\n{"-" * 30}\n'.join(st_1), f'\n{"-" * 30}\n'.join(st_2), f'\n{"-" * 30}\n'.join(st_3), f'\n{"-" * 30}\n'.join(st_4), f'\n{"-" * 30}\n'.join(st_5)
+
+
+def split_list(input_list, parts=5):
+    length = len(input_list)
+    return [input_list[i * length // parts: (i + 1) * length // parts]
+            for i in range(parts)]

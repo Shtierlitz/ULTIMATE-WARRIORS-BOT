@@ -33,14 +33,14 @@ class Player(Base):
     ally_code = Column(Integer)
     name = Column(String(100))
     level = Column(Integer)
-    update_time = Column(DateTime, default=datetime.utcnow)
+    update_time = Column(DateTime, default=datetime.utcnow)     # дата обновления в бд
     guild_join_time = Column(DateTime, default=datetime.utcnow)
     arena_rank = Column(Integer)
     url = Column(String(5000))
     id = Column(Integer, primary_key=True)
     player_id = Column(Integer)
     arena_leader_base_id = Column(String(50))
-    last_updated = Column(DateTime, default=datetime.utcnow)
+    last_updated = Column(DateTime, default=datetime.utcnow)    # дата обновления в swgoh.gg
     galactic_power = Column(Integer)
     character_galactic_power = Column(Integer)
     ship_galactic_power = Column(Integer)

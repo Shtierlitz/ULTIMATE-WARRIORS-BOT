@@ -162,3 +162,4 @@ cython_debug/
 api/ids.json
 api/ids.txt
 guild.db
+temp.txt

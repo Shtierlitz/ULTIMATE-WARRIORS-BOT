@@ -5,6 +5,7 @@ from aiogram.utils import executor
 from aiogram.utils.exceptions import NetworkError
 
 import db
+from api.guild_parser import some_func
 from handlers import member, admin, other, player_data
 # from data_base import sqlite_db
 from create_bot import dp
@@ -24,8 +25,10 @@ player_data.register_handlers_player(dp)
 if __name__ == '__main__':
     # while True:
     #     try:
+    # some_func()
     executor.start_polling(dp, skip_updates=True,
                            on_startup=on_startup)  # нужно чтоб не завалило спамом когда он не активный
+
         # except NetworkError as e:
         #     print(f"Произошла ошибка сервера: {e}")
         #     continue
