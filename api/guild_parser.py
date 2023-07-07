@@ -1,59 +1,66 @@
 # api/guild_parser.py
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 import json
 
-from sqlalchemy import func
+from sqlalchemy import func, desc
 
 from create_bot import session
 from db_models import Player
 
+link = 'http://api.swgoh.gg/'
 
-def some_func():
-    current_date = datetime.now().date()
-    players_list = session.query(Player).filter(func.date(Player.update_time) == current_date)
-    result = []
-    count_true = 0
-    count_false = 0
-    link_pre = 'https://swgoh.gg/p/'
-    for i in players_list:
-        request = requests.get(f"http://api.swgoh.gg/player/{i.ally_code}/gac-bracket/")
-        # print(request.status_code)
-        if request.status_code == 200:
-            data = request.json()
-            # result[i.name] = "зареган"
-            print(i.name, "зареган", data)
-            # message = f"{i.name} зареган. Противники: \n"
-            # bracket_players = data['data']['bracket_players']
-            # temp_list = []
-            # for i in bracket_players:
-            #     st = f"<a href=\"{link_pre}{i['ally_code']}\"{i['player_name']}</a>"
-            #     temp_list.append(st)
-            # message += ", ".join(temp_list)
-            # result.append(message)
-            # count_true += 1
-        else:
-            # result.append(f'{i.name} не зареган')
-            print(i.name, "не зареган")
-            # count_false += 1
-    # result.append(f"Зареганных всего: {count_true}")
-    # result.append(f"Завтыкали: {count_false}")
+my_ally_code = '796483269'
+guild_id = '0rNNFa76RXyv0C3suyUkFA'
+guild_url = "/g/0rNNFa76RXyv0C3suyUkFA/"
+player_id = "Ce_Y09gxSUSE4leM8K0dng"
+api_link = f"{os.environ.get('API_HOST')}:{os.environ.get('API_PORT')}"
 
-    return "\n".join(result)
+data = {
+    "payload": {
+        "guildId": "0rNNFa76RXyv0C3suyUkFA",
+        "includeRecentGuildActivityInfo": True
+    },
+    "enums": False
+}
+
+response = requests.post(f"{api_link}/guild", json=data)
 
 
+def some_func(response):
+    # Затем вы можете проверить ответ
+    if response.status_code == 200:
+        data = response.json()
+        for i in data['guild']['member']:
+            # for i in data['guild']['recentRaidResult'][0]['raidMember']:
+            print(i)
+    else:
+        print("Ошибка:", response.status_code)
 
-            # success += 1
-    #     else:
-    #         fail += 1
-    # print(success)
-    # print(fail)
+
+some_func(response)
+
+data = {
+    "payload": {
+        "allyCode": "796483269"
+    },
+    "enums": False
+}
+
+player_resp = requests.post(f"{api_link}/player", json=data)
 
 
-# some_func()
+def player_func(response):
+    if response.status_code == 200:
+        data = response.json()
+        print(data.keys())
+    else:
+        print("Ошибка:", response.status_code)
+
+# player_func(player_resp)
 
 
 def show_guild_members(request: requests):
@@ -68,12 +75,6 @@ def show_guild_members(request: requests):
         #     print(i)
 
 
-link = 'http://api.swgoh.gg/'
-
-my_ally_code = '796483269'
-guild_id = '0rNNFa76RXyv0C3suyUkFA'
-guild_url = "/g/0rNNFa76RXyv0C3suyUkFA/"
-
 guild_profile = requests.get("http://api.swgoh.gg/guild-profile/0rNNFa76RXyv0C3suyUkFA")
 
 
@@ -82,9 +83,9 @@ guild_profile = requests.get("http://api.swgoh.gg/guild-profile/0rNNFa76RXyv0C3s
 def show_player_data(request: requests):
     if request.status_code == 200:
         data = request.json()
-        # print(data['data'].items())
-        for i in data['data'].items():
-            print(i)
+        print(data['data'].items())
+        # for i in data['data'].items():
+        #     print(i)
 
 
 player_search = requests.get(f'http://api.swgoh.gg/player/{my_ally_code}/')
@@ -113,6 +114,4 @@ def make_json_ids():
     with open('ids.json', 'w', encoding='utf-8') as e:
         json.dump(ar, e, indent=4, ensure_ascii=False)
 
-
 # make_json_ids()
-

@@ -1,8 +1,16 @@
 # db_models.py
+import os
 
 from db import Base
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
+from pytz import timezone
+from dotenv import load_dotenv
+
+load_dotenv()
+
+tz = str(os.environ.get("TIME_ZONE"))
+time_tz = timezone(tz)
 
 
 class Guild(Base):
@@ -33,14 +41,17 @@ class Player(Base):
     ally_code = Column(Integer)
     name = Column(String(100))
     level = Column(Integer)
-    update_time = Column(DateTime, default=datetime.utcnow)     # дата обновления в бд
-    guild_join_time = Column(DateTime, default=datetime.utcnow)
+    update_time = Column(DateTime, default=datetime.now(time_tz))     # дата обновления в бд
+    guild_join_time = Column(DateTime, default=datetime.now(time_tz))
+    lastActivityTime = Column(DateTime, default=datetime.now(time_tz))
+    reid_points = Column(Integer)
+    guild_points = Column(Integer)
     arena_rank = Column(Integer)
     url = Column(String(5000))
     id = Column(Integer, primary_key=True)
     player_id = Column(Integer)
     arena_leader_base_id = Column(String(50))
-    last_updated = Column(DateTime, default=datetime.utcnow)    # дата обновления в swgoh.gg
+    last_updated = Column(DateTime, default=datetime.now(time_tz))    # дата обновления в swgoh.gg
     galactic_power = Column(Integer)
     character_galactic_power = Column(Integer)
     ship_galactic_power = Column(Integer)
@@ -50,7 +61,6 @@ class Player(Base):
     pve_hard_won = Column(Integer)
     galactic_war_won = Column(Integer)
     guild_raid_won = Column(Integer)
-    guild_contribution = Column(Integer)
     guild_exchange_donations = Column(Integer)
     season_full_clears = Column(Integer)
     season_successful_defends = Column(Integer)
@@ -60,18 +70,6 @@ class Player(Base):
     season_banners_earned = Column(Integer)
     season_offensive_battles_won = Column(Integer)
     season_territories_defeated = Column(Integer)
-    skill_rating = Column(Integer)
-    division_number = Column(Integer)
-    league_name = Column(String(100))
-    league_frame_image = Column(String(5000))
-    league_blank_image = Column(String(5000))
-    league_image = Column(String(5000))
-    division_image = Column(String(5000))
-    portrait_image = Column(String(5000))
-    title = Column(String(100))
-    guild_id = Column(String(100))
-    guild_name = Column(String(100))
-    guild_url = Column(String(100))
 
     def __str__(self):
         return f"{self.name}'s {self.update_time} data."

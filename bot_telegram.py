@@ -1,11 +1,11 @@
 # bot_telegram.py
-
+import os
 
 from aiogram.utils import executor
 from aiogram.utils.exceptions import NetworkError
 
 import db
-from api.guild_parser import some_func
+# from api.guild_parser import compare_player_data
 from handlers import member, admin, other, player_data
 # from data_base import sqlite_db
 from create_bot import dp
@@ -19,13 +19,13 @@ async def on_startup(_):  # функция настроек старта бот�
 
 member.register_handlers_member(dp)  # регистрация хендлеров
 player_data.register_handlers_player(dp)
-# admin.register_handlers_admin(dp)
+admin.register_handlers_admin(dp)
 # other.register_handlers_other(dp)  # хендлеры без команд нужно импортировать последними
 
 if __name__ == '__main__':
     # while True:
     #     try:
-    # some_func()
+    # compare_player_data()
     executor.start_polling(dp, skip_updates=True,
                            on_startup=on_startup)  # нужно чтоб не завалило спамом когда он не активный
 
