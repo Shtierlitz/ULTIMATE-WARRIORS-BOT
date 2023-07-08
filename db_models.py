@@ -16,24 +16,17 @@ time_tz = timezone(tz)
 class Guild(Base):
     __tablename__ = 'guild'
     name = Column(String(50))
-    external_message = Column(String(500))
-    galactic_power = Column(Integer)
-    level_requirement = Column(Integer)
-    member_count = Column(Integer)
-    avg_galactic_power = Column(Integer)
-    avg_arena_rank = Column(Integer)
-    avg_fleet_arena_rank = Column(Integer)
-    avg_skill_rating = Column(Integer)
-    last_sync = Column(DateTime, default=datetime.utcnow)
     guild_id = Column(String(500))
-    enrollment_status = Column(Integer)
-    banner_color_id = Column(String(50))
-    banner_logo_id = Column(String(50))
-    guild_type = Column(Integer)
+    credo = Column(String(500))
+    galactic_power = Column(Integer)
+    required_level = Column(Integer)
+    total_members = Column(Integer)
+    guild_reset_time = Column(Integer)
+    last_db_update_time = Column(DateTime, default=datetime.now(time_tz))
     id = Column(Integer, primary_key=True)
 
     def __str__(self):
-        return f"{self.name}'s {self.update_time} data."
+        return f"{self.name}'s {self.last_db_update_time} data."
 
 
 class Player(Base):
@@ -62,6 +55,7 @@ class Player(Base):
     galactic_war_won = Column(Integer)
     guild_raid_won = Column(Integer)
     guild_exchange_donations = Column(Integer)
+    season_status = Column(Integer)
     season_full_clears = Column(Integer)
     season_successful_defends = Column(Integer)
     season_league_score = Column(Integer)

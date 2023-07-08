@@ -5,6 +5,7 @@ from aiogram.utils import executor
 from aiogram.utils.exceptions import NetworkError
 
 import db
+from api_utils import GuildData, get_new_day_start, PlayerData, get_event_data
 # from api.guild_parser import compare_player_data
 from handlers import member, admin, other, player_data
 # from data_base import sqlite_db
@@ -25,7 +26,8 @@ admin.register_handlers_admin(dp)
 if __name__ == '__main__':
     # while True:
     #     try:
-    # compare_player_data()
+    print(get_event_data())
+    # PlayerData().update_players_data()
     executor.start_polling(dp, skip_updates=True,
                            on_startup=on_startup)  # нужно чтоб не завалило спамом когда он не активный
 

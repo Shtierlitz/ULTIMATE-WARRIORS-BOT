@@ -14,22 +14,32 @@ COMMANDS = {
     "start": "Начать работу с ботом",
     "help": "Получить информацию о доступных командах",
     "player": "Открыть панель кнопок где можно получить информацию по согильдийцу",
-    "gac": "Получить полную статистику по регистрации на ВА с сылками на возможных соперников"
+    "gac": "Получить полную статистику по регистрации на ВА с сылками на возможных соперников",
+    "reid_list": "Показывает полный список кто сколько купонов сдал",
+    "reid_lazy": "Список тех кто еще не сдал 600"
+
     # Добавьте здесь другие команды по мере необходимости
 }
 
 executor = ThreadPoolExecutor(max_workers=2)
 
 
+def handle_exception(future):
+    exception = future.exception()
+    if exception:
+        # здесь обработка исключения
+        print(f"Ошибка: {exception}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
+
 async def command_start(message: types.Message):
     """Стартуем бот и обновляем БД"""
-    try:
-        await bot.send_message(message.chat.id, "Начинаем работу.\nОбновляем базу данных...\nПодождите...")
-        loop = asyncio.get_event_loop()
-        loop.run_in_executor(executor, PlayerData().update_players_data)
-        await bot.send_message(message.chat.id, "База данных обновляется в фоне.\nМожно приступать к работе.")
-    except Exception as e:
-        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+    await bot.send_message(message.chat.id, "Начинаем работу.\nОбновляем базу данных...\nПодождите...")
+    loop = asyncio.get_event_loop()
+    future = loop.run_in_executor(None, PlayerData().update_players_data)
+    future.add_done_callback(handle_exception)
+    future2 = loop.run_in_executor(None, GuildData().build_db)
+    future2.add_done_callback(handle_exception)
+    await bot.send_message(message.chat.id, "База данных обновляется в фоне.\nМожно приступать к работе.")
 
 
 async def command_help(message: types.Message):
