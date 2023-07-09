@@ -163,3 +163,5 @@ api/ids.json
 api/ids.txt
 guild.db
 temp.txt
+fake_db.py
+ids.json

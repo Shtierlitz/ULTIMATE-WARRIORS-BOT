@@ -1,7 +1,7 @@
 # db_models.py
 import os
 
-from db import Base
+from settings import Base
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 from pytz import timezone
@@ -11,6 +11,7 @@ load_dotenv()
 
 tz = str(os.environ.get("TIME_ZONE"))
 time_tz = timezone(tz)
+
 
 
 class Guild(Base):
@@ -31,23 +32,24 @@ class Guild(Base):
 
 class Player(Base):
     __tablename__ = 'players'
-    ally_code = Column(Integer)
-    name = Column(String(100))
-    level = Column(Integer)
-    update_time = Column(DateTime, default=datetime.now(time_tz))     # дата обновления в бд
-    guild_join_time = Column(DateTime, default=datetime.now(time_tz))
-    lastActivityTime = Column(DateTime, default=datetime.now(time_tz))
-    reid_points = Column(Integer)
-    guild_points = Column(Integer)
-    arena_rank = Column(Integer)
-    url = Column(String(5000))
-    id = Column(Integer, primary_key=True)
-    player_id = Column(Integer)
+    id = Column(Integer, primary_key=True)      # Идентификатор в базе
+    name = Column(String(100))                  # имя аккаунта
+    ally_code = Column(Integer)                 # код союзника
+    tg_id = Column(Integer)                     # идентификатор телеграма
+    update_time = Column(DateTime, default=datetime.now(time_tz))  # дата обновления в бд
+    reid_points = Column(Integer)               # сданые очки рейдов в день
+    lastActivityTime = Column(DateTime, default=datetime.now(time_tz))  # последний раз как заходил в игру
+    level = Column(Integer)                     # уровень аккаунта
+    player_id = Column(Integer)                 # id игрока в системе игры
+    arena_rank = Column(Integer)                # ранг арены
+    galactic_power = Column(Integer)            # общая галактическая мощь
+    character_galactic_power = Column(Integer)  # Галактическая мощь по персонажам
+    ship_galactic_power = Column(Integer)       # Галактическая мощь по флоту
+    guild_join_time = Column(DateTime, default=datetime.now(time_tz))   # дата вступления в гильдию
+    url = Column(String(5000))                  # ссылка на аккаунт игрока на swgoh
+    last_swgoh_updated = Column(DateTime, default=datetime.now(time_tz))  # дата обновления в swgoh.gg
+    guild_currency_earned = Column(Integer)        # заработанная и собранная валюта гильдии в день
     arena_leader_base_id = Column(String(50))
-    last_updated = Column(DateTime, default=datetime.now(time_tz))    # дата обновления в swgoh.gg
-    galactic_power = Column(Integer)
-    character_galactic_power = Column(Integer)
-    ship_galactic_power = Column(Integer)
     ship_battles_won = Column(Integer)
     pvp_battles_won = Column(Integer)
     pve_battles_won = Column(Integer)

@@ -4,7 +4,9 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from api_utils import PlayerData, GuildData
+
+from src.player import PlayerData
+from src.guild import GuildData
 from create_bot import session, bot
 from keyboards.players_kb import create_keyboard, create_player_info_keyboard
 from sqlalchemy import func

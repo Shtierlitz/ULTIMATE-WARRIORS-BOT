@@ -1,13 +1,16 @@
 # handlers/member.py
 import os
 
-from api_utils import PlayerData, GuildData, gac_statistic
+from src.utils import gac_statistic
+from src.player import PlayerData
+from src.guild import GuildData
 from create_bot import bot, session
 from aiogram import types, Dispatcher
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 
 from db_models import Player
+from tasks import send_message
 
 GROUP_CHAT_ID = os.environ.get("GROUP_ID")
 COMMANDS = {
@@ -47,6 +50,7 @@ async def command_help(message: types.Message):
     try:
         commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
         await bot.send_message(message.chat.id, f"Список доступных команд:\n\n{commands}")
+        # send_message.delay(562272797, "Hello There")
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
