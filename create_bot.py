@@ -11,9 +11,8 @@ from dotenv import load_dotenv
 import settings
 
 load_dotenv()
-storage = MemoryStorage()   # хранилище блока состояния
+storage = MemoryStorage()  # хранилище блока состояния
 
-# bot = Bot(token=os.getenv('TOKEN'))  # читаем токен
 bot = Bot(token=os.environ.get('TOKEN'))  # читаем токен
-dp = Dispatcher(bot, storage=storage)  #
+dp = Dispatcher(bot, storage=storage)
 session = settings.Session()

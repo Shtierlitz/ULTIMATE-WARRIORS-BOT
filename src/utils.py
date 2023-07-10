@@ -69,3 +69,6 @@ def get_new_day_start() -> datetime:
         new_day_start = new_day_start - timedelta(days=1)
 
     return new_day_start
+
+
+

@@ -8,9 +8,10 @@ from create_bot import bot, session
 from aiogram import types, Dispatcher
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from db_models import Player
-from tasks import send_message
+from worker.tasks import send_message
 
 GROUP_CHAT_ID = os.environ.get("GROUP_ID")
 COMMANDS = {
@@ -24,7 +25,7 @@ COMMANDS = {
     # Добавьте здесь другие команды по мере необходимости
 }
 
-executor = ThreadPoolExecutor(max_workers=2)
+# executor = ThreadPoolExecutor(max_workers=2)
 
 
 def handle_exception(future):
@@ -39,9 +40,9 @@ async def command_start(message: types.Message):
     await bot.send_message(message.chat.id, "Начинаем работу.\nОбновляем базу данных...\nПодождите...")
     loop = asyncio.get_event_loop()
     future = loop.run_in_executor(None, PlayerData().update_players_data)
-    future.add_done_callback(handle_exception)
+    # future.add_done_callback(handle_exception)
     future2 = loop.run_in_executor(None, GuildData().build_db)
-    future2.add_done_callback(handle_exception)
+    # future2.add_done_callback(handle_exception)
     await bot.send_message(message.chat.id, "База данных обновляется в фоне.\nМожно приступать к работе.")
 
 
@@ -50,8 +51,9 @@ async def command_help(message: types.Message):
     try:
         commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
         await bot.send_message(message.chat.id, f"Список доступных команд:\n\n{commands}")
-        # send_message.delay(562272797, "Hello There")
+
     except Exception as e:
+        print(e)
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
@@ -61,7 +63,7 @@ async def command_gac_statistic(message: types.Message):
         await message.reply(f"Добываю статистику. Ожидайте выполнения...")
         loop = asyncio.get_event_loop()
 
-        st_1, st_2, st_3, st_4, st_5 = await loop.run_in_executor(executor, gac_statistic)
+        st_1, st_2, st_3, st_4, st_5 = await loop.run_in_executor(None, gac_statistic)
 
         await bot.send_message(message.chat.id, text=st_1, parse_mode="Markdown")
         await bot.send_message(message.chat.id, text=st_2, parse_mode="Markdown")
@@ -99,6 +101,20 @@ async def get_raid_lazy(message: types.Message):
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
+async def command_some(message: types.Message):
+    try:
+        # извлекаем имя пользователя, начинающееся с @
+        username = message.text.split()[-1]
+
+        # делаем что-то с username...
+        await bot.send_message(message.chat.id, f"Ваше имя пользователя: {username}")
+
+    except Exception as e:
+        print(e)
+        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
+
+
 def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
     dp.register_message_handler(command_help, commands=['help'])
@@ -106,3 +122,6 @@ def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_gac_statistic, commands=['gac'], state='*')
     dp.register_message_handler(get_raid_points, commands=['reid_list'], state='*')
     dp.register_message_handler(get_raid_lazy, commands=['reid_lazy'], state='*')
+    dp.register_message_handler(command_some, commands=['dog'], state='*')
+
+

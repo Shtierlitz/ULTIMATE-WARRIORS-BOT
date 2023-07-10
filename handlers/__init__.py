@@ -4,3 +4,4 @@ from handlers import member
 from handlers import admin
 from handlers import other
 from handlers import player_data
+from handlers import send_group_message

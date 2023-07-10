@@ -36,6 +36,7 @@ class Player(Base):
     name = Column(String(100))                  # имя аккаунта
     ally_code = Column(Integer)                 # код союзника
     tg_id = Column(Integer)                     # идентификатор телеграма
+    tg_nic = Column(String(100))                # ник в телеге
     update_time = Column(DateTime, default=datetime.now(time_tz))  # дата обновления в бд
     reid_points = Column(Integer)               # сданые очки рейдов в день
     lastActivityTime = Column(DateTime, default=datetime.now(time_tz))  # последний раз как заходил в игру

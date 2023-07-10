@@ -57,30 +57,30 @@ class PlayerData:
 
     def create_or_update_player_data(self, data: dict):
         """Создает или обновляет данные пользователя на текущий день"""
-        try:
-            new_day_start = get_new_day_start()
+        # try:
+        new_day_start = get_new_day_start()
 
-            existing_user_today = session.query(Player).filter_by(ally_code=data['ally_code']).filter(
-                Player.update_time >= new_day_start).first()
+        existing_user_today = session.query(Player).filter_by(ally_code=data['ally_code']).filter(
+            Player.update_time >= new_day_start).first()
 
-            # Если пользователь уже существует
-            if existing_user_today:
-                print(f"{data['name']}: old")
-                self.__set_player_attributes(existing_user_today, data)
-                session.commit()
-            else:
-                print(f"{data['name']}: new")
-                # Добавляем нового пользователя
-                new_user = self.__set_player_attributes(Player(), data)
-                session.add(new_user)
-                session.commit()
-
-                # Удаление записей старше месяца
-            month_old_date = datetime.now() - timedelta(days=30)
-            session.query(Player).filter(Player.update_time < month_old_date).delete()
+        # Если пользователь уже существует
+        if existing_user_today:
+            print(f"{data['name']}: old")
+            self.__set_player_attributes(existing_user_today, data)
             session.commit()
-        except Exception as e:
-            raise DatabaseBuildError(f"An error occurred while building the Player database: {e}") from e
+        else:
+            print(f"{data['name']}: new")
+            # Добавляем нового пользователя
+            new_user = self.__set_player_attributes(Player(), data)
+            session.add(new_user)
+            session.commit()
+
+            # Удаление записей старше месяца
+        month_old_date = datetime.now() - timedelta(days=30)
+        session.query(Player).filter(Player.update_time < month_old_date).delete()
+        session.commit()
+        # except Exception as e:
+        #     raise DatabaseBuildError(f"An error occurred while building the Player database: {e}") from e
 
     def __set_player_attributes(self, player, data):
         """Устанавливает значения из переданного словаря в модель Player"""
@@ -100,6 +100,7 @@ class PlayerData:
         player.guild_currency_earned = int(data['guild_points'])
         player.player_id = data['playerId']
         player.tg_id = data['existing_player']['tg_id']
+        player.tg_nic = data['existing_player']['tg_nic']
         player.update_time = datetime.now(time_tz)
         player.ally_code = data['ally_code']
         player.arena_leader_base_id = data['arena_leader_base_id']
@@ -135,60 +136,60 @@ class PlayerData:
     def update_players_data(self):
         """Вытаскивает данные о гильдии и участниках, а после
          по имени участника гоняет циклом обновление бд для каждого участника"""
-        try:
-            swgoh_request = requests.get(f"http://api.swgoh.gg/guild-profile/{os.environ.get('GUILD_ID')}")
-            error_list = []
-            swgoh_request.raise_for_status()
-            data = swgoh_request.json()
-            existing_players = self.__add_ids()
+        # try:
+        swgoh_request = requests.get(f"http://api.swgoh.gg/guild-profile/{os.environ.get('GUILD_ID')}")
+        error_list = []
+        swgoh_request.raise_for_status()
+        data = swgoh_request.json()
+        existing_players = self.__add_ids()
 
-            try:
-                comlink_request = requests.post(f"{API_LINK}/guild", json=GUILD_POST_DATA)
-                comlink_request.raise_for_status()
-                raw_data = comlink_request.json()
-                guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
-            except requests.exceptions.HTTPError:
-                raise Status404Error(f"Комлинк с гильдией не отвечает при построении базы для игрока")
+            # try:
+        comlink_request = requests.post(f"{API_LINK}/guild", json=GUILD_POST_DATA)
+        comlink_request.raise_for_status()
+        raw_data = comlink_request.json()
+        guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
+            # except requests.exceptions.HTTPError:
+            #     raise Status404Error(f"Комлинк с гильдией не отвечает при построении базы для игрока")
 
-            for i in data['data']['members']:
-                if str(i['ally_code']) in existing_players:
-                    final_data: dict = self.get_swgoh_player_data(i['ally_code'])
-                    final_data.update({'guild_join_time': i['guild_join_time']})
-                    final_data.update({'existing_player': existing_players[str(i['ally_code'])]})
-                    try:
-                        post_data = {
-                            "payload": {
-                                "allyCode": f"{i['ally_code']}"
-                            },
-                            "enums": False
-                        }
-                        comlink_player_request = requests.post(f"{API_LINK}/player", json=post_data)
-                        comlink_player_request.raise_for_status()
-                        comlink_data = comlink_player_request.json()
-                        final_data.update({'name': comlink_data['name']})
-                        final_data.update({'level': comlink_data['level']})
-                        final_data.update({'playerId': comlink_data['playerId']})
-                        final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
-                        member_contribution_dict = {item['type']: item['currentValue'] for item in
-                                                    guild_data_dict[comlink_data['name']]['memberContribution']}
-                        final_data.update({'reid_points': member_contribution_dict[2]})
-                        final_data.update({'guild_points': member_contribution_dict[1]})
-                        final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
+        for i in data['data']['members']:
+            if str(i['ally_code']) in existing_players:
+                final_data: dict = self.get_swgoh_player_data(i['ally_code'])
+                final_data.update({'guild_join_time': i['guild_join_time']})
+                final_data.update({'existing_player': existing_players[str(i['ally_code'])]})
+                # try:
+                post_data = {
+                    "payload": {
+                        "allyCode": f"{i['ally_code']}"
+                    },
+                    "enums": False
+                }
+                comlink_player_request = requests.post(f"{API_LINK}/player", json=post_data)
+                comlink_player_request.raise_for_status()
+                comlink_data = comlink_player_request.json()
+                final_data.update({'name': comlink_data['name']})
+                final_data.update({'level': comlink_data['level']})
+                final_data.update({'playerId': comlink_data['playerId']})
+                final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
+                member_contribution_dict = {item['type']: item['currentValue'] for item in
+                                            guild_data_dict[comlink_data['name']]['memberContribution']}
+                final_data.update({'reid_points': member_contribution_dict[2]})
+                final_data.update({'guild_points': member_contribution_dict[1]})
+                final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
 
-                        self.create_or_update_player_data(final_data)
+                self.create_or_update_player_data(final_data)
 
-                    except Exception as e:
-                        raise Status404Error(
-                            f"Комлинк с гильдией не отвечает при построении базы для игрока {e}") from e
+                #     except Exception as e:
+                #         raise Status404Error(
+                #             f"Комлинк с гильдией не отвечает при построении базы для игрока {e}") from e
+                #
+            else:
+                error_list.append(f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json")
 
-                else:
-                    error_list.append(f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json")
+        print("\n".join(error_list))
+        print("Данные игроков в базе обновлены.")
 
-            print("\n".join(error_list))
-            print("Данные игроков в базе обновлены.")
-
-        except Exception as e:
-            raise Status404Error(f"An error occurred while building the Player database: {e}") from e
+        # except Exception as e:
+        #     raise Status404Error(f"An error occurred while building the Player database: {e}") from e
 
     def extract_data(self, player: Player):
         """Выводит все данные по игроку"""
@@ -204,9 +205,8 @@ class PlayerData:
 
     @staticmethod
     def get_raid_scores():
+        "Возвращает список всех игроков и их сданную энку"
         new_day_start = get_new_day_start()
-        today = datetime.now().date()
-        yesterday = today - timedelta(days=1)
 
         # получить данные за (сегодня)
         recent_players = session.query(Player).filter(
@@ -223,15 +223,18 @@ class PlayerData:
                 players_dict[player.name] = player
 
         # форматируем результат в нужный вид и сортируем по убыванию очков
-        raid_scores = [
-            f"{player.name} {player.reid_points} купонов"
-            for player in sorted(players_dict.values(), key=lambda x: x.reid_points, reverse=True)
+        reid_scores = [
+            f"{i + 1}. {player.name} {player.reid_points} купонов"
+            for i, player in enumerate(sorted(players_dict.values(), key=lambda x: x.reid_points, reverse=True))
+            if player.reid_points < 600  # добавляем условие
         ]
+        reid_scores.append(f"Всего: {len(reid_scores)}")
 
-        return f"\n{'-' * 30}\n".join(raid_scores)
+        return f"\n{'-' * 30}\n".join(reid_scores)
 
     @staticmethod
     def get_reid_lazy_fools():
+        """Возвращает список лентяев которые не еще не сдали энку"""
         new_day_start = get_new_day_start()
 
         # existing_user_today = session.query(Player).filter_by(name=data['name']).filter(
@@ -253,14 +256,16 @@ class PlayerData:
                 players_dict[player.name] = player
         # форматируем результат в нужный вид и сортируем по убыванию очков
         reid_scores = [
-            f"{player.name} {player.reid_points} купонов"
-            for player in sorted(players_dict.values(), key=lambda x: x.reid_points, reverse=True)
+            f"{i+1}. {player.name} {player.reid_points} купонов"
+            for i, player in enumerate(sorted(players_dict.values(), key=lambda x: x.reid_points, reverse=True))
             if player.reid_points < 600  # добавляем условие
         ]
+        reid_scores.append(f"Всего: {len(reid_scores)}")
 
         # добавляем время обновления, используя время обновления первого игрока в списке
         update_time = recent_players[0].update_time.strftime('%H:%M:%S')
         reid_scores.insert(0,
                            f"Список не сдавших 600 купонов по состоянию на {update_time} {os.environ.get('TZ_SUFIX')}:\n")
+
 
         return f"\n{'-' * 30}\n".join(reid_scores)

@@ -9,6 +9,7 @@ import json
 import os
 
 from db_models import Player
+from src.utils import split_list
 
 COMMANDS = {
     "admin": "Получить информацию о доступных командах администратора",
@@ -33,13 +34,12 @@ async def add_player(message: types.Message):
     """Добавляет игрока в ids.json"""
     try:
         player_info = message.text.split(" ")
-        if len(player_info) != 4:
+        if len(player_info) != 5:
             await bot.send_message(message.chat.id,
-                                   f"Неверный формат команды. Используйте: /add_player Имя Ally_code Tg_id")
+                                   f"Неверный формат команды. Используйте: \n/add_player имя код_союзника тг_id тг_ник\n Все через один пробел.")
             return
-
-        # имя игрока, код и ID телеграмма
-        player_name, ally_code, tg_id = player_info[1], player_info[2], player_info[3]
+        # имя игрока, код и ID телеграма и ник в телеграме
+        player_name, ally_code, tg_id, tg_nic = player_info[1], player_info[2], player_info[3], player_info[4]
 
         file_path = os.path.join(os.path.dirname(__file__), '..', 'api', 'ids.json')
         if os.path.exists(file_path):
@@ -50,9 +50,10 @@ async def add_player(message: types.Message):
             else:
                 # Добавление нового игрока в список
                 data.append({
-                    player_name: {
-                        "ally_code": ally_code,
-                        "tg_id": tg_id
+                    ally_code: {
+                        "player_name": player_name,
+                        "tg_id": tg_id,
+                        "tg_nic": tg_nic
                     }
                 })
 
@@ -77,20 +78,24 @@ async def players_list(message: types.Message):
 
             # Перебираем список игроков и формируем строку
             msg_list = []
-            for player in data:
-                for name, info in player.items():
+            for index, player in enumerate(data):
+                for ally_code, info in player.items():
                     msg = (
-                        f"Имя: {name}\n"
-                        f"Код союзника: {info['ally_code']}\n"
+                        f"{index+1}: {info['player_name']}\n"
+                        f"Код союзника: {ally_code}\n"
                         f"ID: {info['tg_id']}\n"
+                        f"TG_NIC: {info['tg_nic']}\n"
                         f"{'-' * 30}\n"
                     )
                     msg_list.append(msg)
             msg_list.append(f"Всего: {len(data)}")
+            final_lst_1, final_lst_2 = split_list(msg_list, 2)     # hfpltkztv
             # Соединяем все сообщения в одну большую строку
-            final_msg = ''.join(msg_list)
+            final_msg_1 = ''.join(final_lst_1)
+            final_msg_2 = ''.join(final_lst_2)
 
-            await bot.send_message(message.chat.id, final_msg)
+            await bot.send_message(message.chat.id, final_msg_1)
+            await bot.send_message(message.chat.id, final_msg_2)
         else:
             await bot.send_message(message.chat.id, "Файл ids.json не найден.")
     except Exception as e:
@@ -110,9 +115,16 @@ async def delete_player(message: types.Message):
         with open(file_path, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
 
+        player_found = False  # флаг, чтобы отслеживать, найден ли игрок
+
         for index, player in enumerate(data):
-            if player_name in player:
-                del data[index]  # Удаляем запись игрока
+            for ally_code, info in player.items():
+                if info["player_name"] == player_name:
+                    del data[index]  # Удаляем запись игрока
+                    player_found = True  # отмечаем, что игрок найден
+                    break
+
+            if player_found:
                 break
         else:
             await message.reply("Игрок с таким именем не найден.")
@@ -126,10 +138,14 @@ async def delete_player(message: types.Message):
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
+
 async def send_month_grafic(message: types.Message):
     """Отправляет график рейда игрока"""
     try:
-        player_name = message.text.split(' ', 1)[1]
+        player_name = message.get_args()
+        if not player_name:
+            await message.reply(f"Неверный формат ввода. Правильно:\n/grafic имя_игрока\nЧерез пробел.")
+            return
 
         # Извлечение данных из базы данных
         player_data = session.query(Player).filter_by(name=player_name).all()
