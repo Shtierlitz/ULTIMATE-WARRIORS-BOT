@@ -1,6 +1,6 @@
 # handlers/admin.py
 from aiogram import types, Dispatcher
-
+import plotly.express as px
 from plotly import graph_objs as go
 from plotly import io as pio
 from create_bot import bot, session
@@ -139,7 +139,7 @@ async def delete_player(message: types.Message):
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
-async def send_month_grafic(message: types.Message):
+async def send_month_player_grafic(message: types.Message):
     """Отправляет график рейда игрока"""
     try:
         player_name = message.get_args()
@@ -188,10 +188,67 @@ async def send_month_grafic(message: types.Message):
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
+async def send_month_total_grafic(message: types.Message):
+    """Отправляет график рейда для всех игроков"""
+    try:
+        # Извлечение данных из базы данных
+        all_players = session.query(Player).all()
+        players_data = {}
+
+        for player in all_players:
+            if player.name not in players_data:
+                players_data[player.name] = {'update_times': [], 'reid_points': []}
+
+            players_data[player.name]['update_times'].append(player.update_time)
+            players_data[player.name]['reid_points'].append(player.reid_points)
+
+        # Подготовка данных для построения графика
+        fig = go.Figure(layout=go.Layout(
+            autosize=False,
+            width=2000,  # Укажите ширину в пикселях
+            height=1200)  # Укажите высоту в пикселях
+        )
+
+        color_palette = px.colors.qualitative.Safe
+
+        for idx, (player_name, data) in enumerate(players_data.items()):
+            fig.add_trace(go.Scatter(
+                x=data['update_times'],
+                y=data['reid_points'],
+                mode='lines+markers+text',
+                text=data['reid_points'],
+                textposition='top center',
+                name=player_name,
+                line=dict(color=color_palette[idx % len(color_palette)], width=2),  # Устанавливаем толщину линии
+                marker=dict(size=10)  # Устанавливаем размер точки
+            ))
+
+        fig.update_layout(
+            title=f'Reid Points Over Month for All Players',
+            xaxis_title='Update Time',
+            yaxis_title='Reid Points',
+            yaxis=dict(
+                range=[-100, 700],
+                tickmode='linear',
+                tick0=0,
+                dtick=50
+            )
+        )
+
+        # Сохранение графика в виде файла изображения
+        buf = io.BytesIO()
+        pio.write_image(fig, buf, format='png')
+        buf.seek(0)
+
+        await bot.send_photo(chat_id=message.chat.id, photo=buf)
+    except Exception as e:
+        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
 
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(add_player, commands=['add_player'], is_chat_admin=True)
     dp.register_message_handler(players_list, commands=['players_list'], is_chat_admin=True)
     dp.register_message_handler(delete_player, commands=['delete_player'], is_chat_admin=True)
     dp.register_message_handler(admin_command_help, commands=['admin'], is_chat_admin=True)
-    dp.register_message_handler(send_month_grafic, commands=['grafic'], is_chat_admin=True)
+    dp.register_message_handler(send_month_player_grafic, commands=['grafic'], is_chat_admin=True)
+    dp.register_message_handler(send_month_total_grafic, commands=['grafic_all'], is_chat_admin=True)

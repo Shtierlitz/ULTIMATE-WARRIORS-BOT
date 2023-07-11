@@ -1,8 +1,8 @@
 # handlers/member.py
 import os
 
-from src.utils import gac_statistic
-from src.player import PlayerData
+from src.utils import gac_statistic, get_new_day_start
+from src.player import PlayerData, PlayerScoreService
 from src.guild import GuildData
 from create_bot import bot, session
 from aiogram import types, Dispatcher
@@ -20,10 +20,12 @@ COMMANDS = {
     "player": "Открыть панель кнопок где можно получить информацию по согильдийцу",
     "gac": "Получить полную статистику по регистрации на ВА с сылками на возможных соперников",
     "reid_list": "Показывает полный список кто сколько купонов сдал",
-    "reid_lazy": "Список тех кто еще не сдал 600"
+    "reid_lazy": "Список тех кто еще не сдал 600",
+    "reid_all": "Список сданной энки за все время"
 
     # Добавьте здесь другие команды по мере необходимости
 }
+
 
 # executor = ThreadPoolExecutor(max_workers=2)
 
@@ -87,7 +89,15 @@ async def get_user_data(message: types.Message):
 
 async def get_raid_points(message: types.Message):
     try:
-        message_strings = PlayerData().get_raid_scores()
+        message_strings = PlayerScoreService.get_raid_scores()
+        await bot.send_message(message.chat.id, message_strings)
+    except Exception as e:
+        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
+
+async def get_raid_points_all(message: types.Message):
+    try:
+        message_strings = PlayerScoreService.get_raid_scores_all()
         await bot.send_message(message.chat.id, message_strings)
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
@@ -95,24 +105,10 @@ async def get_raid_points(message: types.Message):
 
 async def get_raid_lazy(message: types.Message):
     try:
-        message_strings = PlayerData().get_reid_lazy_fools()
+        message_strings = PlayerScoreService.get_reid_lazy_fools()
         await bot.send_message(message.chat.id, message_strings)
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
-
-async def command_some(message: types.Message):
-    try:
-        # извлекаем имя пользователя, начинающееся с @
-        username = message.text.split()[-1]
-
-        # делаем что-то с username...
-        await bot.send_message(message.chat.id, f"Ваше имя пользователя: {username}")
-
-    except Exception as e:
-        print(e)
-        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
 
 
 def register_handlers_member(dp: Dispatcher):
@@ -122,6 +118,4 @@ def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_gac_statistic, commands=['gac'], state='*')
     dp.register_message_handler(get_raid_points, commands=['reid_list'], state='*')
     dp.register_message_handler(get_raid_lazy, commands=['reid_lazy'], state='*')
-    dp.register_message_handler(command_some, commands=['dog'], state='*')
-
-
+    dp.register_message_handler(get_raid_points_all, commands=['reid_all'], state='*')

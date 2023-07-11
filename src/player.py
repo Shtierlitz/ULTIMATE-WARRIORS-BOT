@@ -2,7 +2,9 @@
 
 import json
 import os
+from collections import defaultdict
 
+import pytz
 import requests
 from sqlalchemy import func
 
@@ -143,13 +145,13 @@ class PlayerData:
         data = swgoh_request.json()
         existing_players = self.__add_ids()
 
-            # try:
+        # try:
         comlink_request = requests.post(f"{API_LINK}/guild", json=GUILD_POST_DATA)
         comlink_request.raise_for_status()
         raw_data = comlink_request.json()
         guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
-            # except requests.exceptions.HTTPError:
-            #     raise Status404Error(f"Комлинк с гильдией не отвечает при построении базы для игрока")
+        # except requests.exceptions.HTTPError:
+        #     raise Status404Error(f"Комлинк с гильдией не отвечает при построении базы для игрока")
 
         for i in data['data']['members']:
             if str(i['ally_code']) in existing_players:
@@ -198,74 +200,93 @@ class PlayerData:
             f"{key}: {value}\n{'-' * 30}" for key, value in data_dict.items() if not key.startswith('_'))
         return formatted_string
 
+    # @staticmethod
+    # def get_player_filtered_data(data: Player, key: str):
+    #     """Возвращает данные игрока по ключу"""
+    #     return data.__dict__[key]
+
+
+class PlayerScoreService:
     @staticmethod
-    def get_player_filtered_data(data: Player, key: str):
-        """Возвращает данные игрока по ключу"""
-        return data.__dict__[key]
+    def get_recent_players():
+        new_day_start = get_new_day_start()
+        # получить данные за (сегодня)
+        return session.query(Player).filter(Player.update_time >= new_day_start).all()
+
+    @staticmethod
+    def get_all_players():
+        return session.query(Player).all()
+
+    @staticmethod
+    def get_sorted_scores(players):
+        # Создаем словарь, где будем суммировать очки
+        player_scores = defaultdict(int)
+
+        # Это переменная для подсчета общего количества очков
+        total_points = 0
+
+        # Проходим по всем записям и суммируем очки
+        for player in players:
+            player_scores[player.name] += player.reid_points
+            total_points += player.reid_points
+
+        return sorted(player_scores.items(), key=lambda x: x[1], reverse=True), total_points
 
     @staticmethod
     def get_raid_scores():
-        "Возвращает список всех игроков и их сданную энку"
-        new_day_start = get_new_day_start()
-
-        # получить данные за (сегодня)
-        recent_players = session.query(Player).filter(
-            Player.update_time >= new_day_start
-        ).all()
-
+        recent_players = PlayerScoreService.get_recent_players()
         if not recent_players:
             return "Нет данных об игроках."
+        sorted_scores, _ = PlayerScoreService.get_sorted_scores(recent_players)
+        scores = PlayerScoreService.format_scores(sorted_scores, filter_points=None)
+        scores.insert(0,
+                      f"\nСписок купонов за день\nОбновление дня в"
+                      f" {os.environ.get('DAY_UPDATE_HOUR')}:{os.environ.get('DAY_UPDATE_MINUTES')}"
+                      f" по {os.environ.get('TZ_SUFFIX')}\n")
+        return f"\n{'-' * 30}\n".join(scores)
 
-        # отбираем самую свежую запись для каждого игрока
-        players_dict = {}
-        for player in recent_players:
-            if player.name not in players_dict or player.update_time > players_dict[player.name].update_time:
-                players_dict[player.name] = player
-
-        # форматируем результат в нужный вид и сортируем по убыванию очков
-        reid_scores = [
-            f"{i + 1}. {player.name} {player.reid_points} купонов"
-            for i, player in enumerate(sorted(players_dict.values(), key=lambda x: x.reid_points, reverse=True))
-            if player.reid_points < 600  # добавляем условие
-        ]
-        reid_scores.append(f"Всего: {len(reid_scores)}")
-
-        return f"\n{'-' * 30}\n".join(reid_scores)
+    @staticmethod
+    def get_raid_scores_all():
+        all_players = PlayerScoreService.get_all_players()
+        if not all_players:
+            return "Нет данных об игроках."
+        sorted_scores, total_points = PlayerScoreService.get_sorted_scores(all_players)
+        scores = PlayerScoreService.format_scores(sorted_scores, filter_points=None, total=False)
+        scores.append(f"Всего купонов за месяц: {total_points}")
+        scores.insert(0, f"\nСписок всех купонов за месяц:\n")
+        return f"\n{'-' * 30}\n".join(scores)
 
     @staticmethod
     def get_reid_lazy_fools():
-        """Возвращает список лентяев которые не еще не сдали энку"""
-        new_day_start = get_new_day_start()
-
-        # existing_user_today = session.query(Player).filter_by(name=data['name']).filter(
-        #     Player.update_time >= new_day_start).first()
-        # today = datetime.now().date()
-
-        # получить данные за (сегодня)
-        recent_players = session.query(Player).filter(
-            Player.update_time >= new_day_start
-        ).all()
-
+        recent_players = PlayerScoreService.get_recent_players()
         if not recent_players:
             return "Нет данных об игроках."
+        sorted_scores, _ = PlayerScoreService.get_sorted_scores(recent_players)
+        scores = PlayerScoreService.format_scores(sorted_scores, filter_points=600)
+        # получение текущей временной зоны
+        tz_name = os.environ.get('TIME_ZONE')
+        t_zone = pytz.timezone(tz_name)
 
-        # отбираем самую свежую запись для каждого игрока
-        players_dict = {}
-        for player in recent_players:
-            if player.name not in players_dict or player.update_time > players_dict[player.name].update_time:
-                players_dict[player.name] = player
+        # конвертация времени
+        local_time = recent_players[0].update_time.astimezone(t_zone)
+
+        # форматирование времени в минуты
+        local_time_str = local_time.strftime('%H:%M')
+
+        scores.insert(0, f"\nСписок не сдавших 600 энки на {local_time_str} по {os.environ.get('TZ_SUFFIX')}\n")
+        return f"\n{'-' * 30}\n".join(scores)
+
+    @staticmethod
+    def format_scores(sorted_scores, filter_points, total=True):
         # форматируем результат в нужный вид и сортируем по убыванию очков
-        reid_scores = [
-            f"{i+1}. {player.name} {player.reid_points} купонов"
-            for i, player in enumerate(sorted(players_dict.values(), key=lambda x: x.reid_points, reverse=True))
-            if player.reid_points < 600  # добавляем условие
+        filtered_scores = [
+            player for player in sorted_scores
+            if filter_points is None or player[1] < filter_points
         ]
-        reid_scores.append(f"Всего: {len(reid_scores)}")
-
-        # добавляем время обновления, используя время обновления первого игрока в списке
-        update_time = recent_players[0].update_time.strftime('%H:%M:%S')
-        reid_scores.insert(0,
-                           f"Список не сдавших 600 купонов по состоянию на {update_time} {os.environ.get('TZ_SUFIX')}:\n")
-
-
-        return f"\n{'-' * 30}\n".join(reid_scores)
+        reid_scores = [
+            f"{i + 1}. {player[0]} {player[1]} купонов"
+            for i, player in enumerate(filtered_scores)
+        ]
+        if total:
+            reid_scores.append(f"Всего: {len(reid_scores)}")
+        return reid_scores
