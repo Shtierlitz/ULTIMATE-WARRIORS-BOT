@@ -42,6 +42,8 @@ def create_player_info_keyboard(player_name: str):
 
         row_btns = []  # Создать список для кнопок строк
         for index, column in enumerate(Player.__table__.columns):  # Получить все поля модели Player
+            if column.name in ('name', 'tg_id', 'id'):  # Если имя поля 'tg_id', пропустите его
+                continue
             button = KeyboardButton(column.name)  # Создать кнопку с именем поля
             row_btns.append(button)
             if (index + 1) % 2 == 0:  # Если это каждая 4-ая кнопка

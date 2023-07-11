@@ -7,7 +7,8 @@ from create_bot import session
 from handlers.member import handle_exception
 from src.guild import GuildData
 from src.utils import get_new_day_start
-from src.player import Player, PlayerData
+from src.player import Player, PlayerData, PlayerScoreService
+from aiogram.utils.exceptions import ChatNotFound
 
 from sqlalchemy import and_
 from dotenv import load_dotenv
@@ -26,8 +27,8 @@ async def check_guild_points(*args, **kwargs):
         "сдашь энку и у нас будут рейгды регулярные. Давай) У тебя уже",
         "не подводи остальных. Сдай энку. У тебя уже",
         "сдай энку. Подавай пример остальным. Не оказывайся в списке аутсайдеров. У тебя уже",
-        "не втыч! Энка! Всего",
-        "ЭНКАААААААА!!!!! Всего",
+        "не втыч! Энка! Сейчас",
+        "ЭНКАААААААА!!!!! Сейчас",
         "Не будешь сдавать энку вовремя, разработчик меня переделает так что срать спамом буду еще и на телефон)) Сдай энку. У тебя сейчас"
     ]
     new_day_start = get_new_day_start()
@@ -39,13 +40,19 @@ async def check_guild_points(*args, **kwargs):
             Player.reid_points < 600
         )
     ).all()
-    len(existing_user_today)
-    officer_id_list_str = os.environ.get('ADMIN_LIST_STR')
-    officer_id_list = officer_id_list_str.split(',')
+    print(len(existing_user_today))
     for player in existing_user_today:
-        await bot.send_message(player.tg_id, f"{player.name}, {rn.choice(message_list)} {player.reid_points} купонов.")
-        for ID in officer_id_list:
-            await bot.send_message(ID, f"{player.name} не сдал вс. энку {player.reid_points}")
+        if player.tg_id != "null":
+            try:
+                await bot.send_message(player.tg_id, f"{player.name}, {rn.choice(message_list)} {player.reid_points} купонов.")
+            except ChatNotFound as e:
+                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"У {player.name} не подключена телега к чату.")
+        else:
+            await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"У {player.name} нету идентификатора в боте.")
+    # Отправляем офицерам напоминалку кто не сдал еще энку
+    message_strings = PlayerScoreService.get_reid_lazy_fools()
+    await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message_strings)
+
 
 
 async def update_db(*args, **kwargs):

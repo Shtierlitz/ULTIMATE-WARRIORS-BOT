@@ -2,20 +2,16 @@
 
 
 import os
-
 import requests
-from sqlalchemy import func
-
 from create_bot import session
 from datetime import datetime, timedelta, time
-
 from db_models import Player
 
 
 def gac_statistic() -> tuple:
     """Выдает статистику по игрокам зарегались на ВГ или нет."""
-    current_date = datetime.now().date()
-    players_list = session.query(Player).filter(func.date(Player.update_time) == current_date)
+    new_day_start = get_new_day_start()
+    players_list = session.query(Player).filter(Player.update_time >= new_day_start).all()
     result = []
     count_true = 0
     count_false = 0
@@ -69,6 +65,3 @@ def get_new_day_start() -> datetime:
         new_day_start = new_day_start - timedelta(days=1)
 
     return new_day_start
-
-
-

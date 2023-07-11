@@ -15,6 +15,7 @@ from db_models import Player, Guild
 from pytz import timezone
 from dotenv import load_dotenv
 
+from local_settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
 from src.utils import get_new_day_start
 
@@ -62,25 +63,26 @@ class PlayerData:
         # try:
         new_day_start = get_new_day_start()
 
-        existing_user_today = session.query(Player).filter_by(ally_code=data['ally_code']).filter(
-            Player.update_time >= new_day_start).first()
+        async with async_session_maker() as session:
+            existing_user_today = session.query(Player).filter_by(ally_code=data['ally_code']).filter(
+                Player.update_time >= new_day_start).first()
 
-        # Если пользователь уже существует
-        if existing_user_today:
-            print(f"{data['name']}: old")
-            self.__set_player_attributes(existing_user_today, data)
-            session.commit()
-        else:
-            print(f"{data['name']}: new")
-            # Добавляем нового пользователя
-            new_user = self.__set_player_attributes(Player(), data)
-            session.add(new_user)
-            session.commit()
+            # Если пользователь уже существует
+            if existing_user_today:
+                print(f"{data['name']}: old")
+                self.__set_player_attributes(existing_user_today, data)
+                session.commit()
+            else:
+                print(f"{data['name']}: new")
+                # Добавляем нового пользователя
+                new_user = self.__set_player_attributes(Player(), data)
+                session.add(new_user)
+                session.commit()
 
-            # Удаление записей старше месяца
-        month_old_date = datetime.now() - timedelta(days=30)
-        session.query(Player).filter(Player.update_time < month_old_date).delete()
-        session.commit()
+                # Удаление записей старше месяца
+            month_old_date = datetime.now() - timedelta(days=30)
+            session.query(Player).filter(Player.update_time < month_old_date).delete()
+            session.commit()
         # except Exception as e:
         #     raise DatabaseBuildError(f"An error occurred while building the Player database: {e}") from e
 
@@ -197,7 +199,7 @@ class PlayerData:
         """Выводит все данные по игроку"""
         data_dict = player.__dict__
         formatted_string = "\n".join(
-            f"{key}: {value}\n{'-' * 30}" for key, value in data_dict.items() if not key.startswith('_'))
+            f"{key}: {value}\n{'-' * 30}" for key, value in data_dict.items() if not key.startswith('_') and key not in ('id', 'tg_id'))
         return formatted_string
 
     # @staticmethod
@@ -209,16 +211,18 @@ class PlayerData:
 class PlayerScoreService:
     @staticmethod
     def get_recent_players():
+        """Создает список из всех записей о согильдийцах за текущие игровые сутки"""
         new_day_start = get_new_day_start()
-        # получить данные за (сегодня)
         return session.query(Player).filter(Player.update_time >= new_day_start).all()
 
     @staticmethod
     def get_all_players():
+        """Список всех записей по игрокам за все время"""
         return session.query(Player).all()
 
     @staticmethod
     def get_sorted_scores(players):
+
         # Создаем словарь, где будем суммировать очки
         player_scores = defaultdict(int)
 
