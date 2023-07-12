@@ -7,11 +7,13 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from src.player import PlayerData
 from src.guild import GuildData
-from create_bot import session, bot
+from create_bot import bot
+from settings import async_session_maker
 from keyboards.players_kb import create_keyboard, create_player_info_keyboard
-from sqlalchemy import func
+from sqlalchemy import func, select
 from datetime import date
 from db_models import Player
+from src.utils import get_new_day_start
 
 
 class PlayerState(StatesGroup):
@@ -28,31 +30,36 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
 async def player_buttons(message: types.Message, state: FSMContext):
-    try:
-        kb = create_keyboard()  # Создать клавиатуру
-        await message.reply("Выберете члена гильдии.", reply_markup=kb)  # Отправить сообщение с клавиатурой
-        await PlayerState.player_name.set()
-    except Exception as e:
-        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+    # try:
+    kb = await create_keyboard()  # Создать клавиатуру
+    await message.reply("Выберете члена гильдии.", reply_markup=kb)  # Отправить сообщение с клавиатурой
+    await PlayerState.player_name.set()
+    # except Exception as e:
+    #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def player_info_buttons(message: types.Message, state: FSMContext):
+    """Открывает панель кнопок с инфой об игроке"""
     if message.text == 'cencel':
         return await cancel_handler(message, state)
-    player_name = message.text[1:]  # Удалить символ '/' перед именем игрока
+    player_name = message.text  # Удалить символ '/' перед именем игрока
     if player_name == 'back':
         await back_handler(message, state)
     else:
         await state.update_data(player_name=player_name)
 
-        today = date.today()  # текущая дата
-        player = session.query(Player).filter(func.date(Player.update_time) == today,
-                                              Player.name == player_name).first()
+        new_day_start = get_new_day_start()  # начало нового дня
+        async with async_session_maker() as session:
+            query = await session.execute(
+                select(Player).filter(Player.update_time >= new_day_start, Player.name == player_name)
+            )
+            player = query.scalars().first()
+
         if not player:  # Если игрока с таким именем нет в базе данных
             await state.reset_state()
             await message.answer('Игрок не найден. Выбор игрока отменён.', reply_markup=types.ReplyKeyboardRemove())
         else:
-            kb = create_player_info_keyboard(player_name)  # Создать клавиатуру
+            kb = await create_player_info_keyboard(player_name)  # Создать клавиатуру
             await message.reply(f"Выберете информацию об игроке {player_name}.", reply_markup=kb)
             await PlayerState.player_data.set()  # Изменить состояние
 
@@ -63,8 +70,12 @@ async def player_data_info(message: types.Message, state: FSMContext):
         return await cancel_handler(message, state)
     data = await state.get_data()
     player_name = data.get("player_name")
-    today = date.today()  # текущая дата
-    player = session.query(Player).filter(func.date(Player.update_time) == today, Player.name == player_name).first()
+    new_day_start = get_new_day_start()  # начало нового дня
+    async with async_session_maker() as session:
+        query = await session.execute(
+            select(Player).filter(Player.update_time >= new_day_start, Player.name == player_name)
+        )
+        player = query.scalars().first()
     if not player:  # Если игрока с таким именем нет в базе данных
         return  # Игнорировать сообщение
 
@@ -72,7 +83,12 @@ async def player_data_info(message: types.Message, state: FSMContext):
     if key == 'back':
         await back_handler(message, state)
     elif key == 'all_data':
-        player = session.query(Player).filter_by(name=player_name).first()
+        # player = session.query(Player).filter_by(name=player_name).first()
+        async with async_session_maker() as session:
+            query = await session.execute(
+                select(Player).filter_by(name=player_name)
+            )
+            player = query.scalars().first()
         player_str_list = PlayerData().extract_data(player)
         await bot.send_message(message.chat.id, player_str_list)
     elif key in player.__dict__:  # Проверяем, является ли ввод ключом в словаре атрибутов игрока
@@ -101,7 +117,7 @@ async def back_handler(message: types.Message, state: FSMContext):
     """Обработчик для команды возврата к предыдущему выбору."""
     current_state = await state.get_state()
     if current_state == "PlayerState:player_data":
-        kb = create_keyboard()  # Создать клавиатуру
+        kb = await create_keyboard()  # Создать клавиатуру
         await message.reply("Выберете члена гильдии.", reply_markup=kb)  # Отправить сообщение с клавиатурой
         await PlayerState.player_name.set()
     elif current_state == "PlayerState:player_name":

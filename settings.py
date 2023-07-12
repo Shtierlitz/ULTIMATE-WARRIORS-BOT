@@ -14,11 +14,7 @@ from db_models import Player
 # # Добавить таблицу в базу данных
 # Base.metadata.create_all(engine)
 
-# Создание всех таблиц в базе данных
-# Обратите внимание, что операция создания всех таблиц в базе данных должна быть обернута в асинхронную функцию
-async def create_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+
 
 cloudinary.config(
     cloud_name=os.environ.get("CLOUD_NAME"),

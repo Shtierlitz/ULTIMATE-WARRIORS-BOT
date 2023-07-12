@@ -15,4 +15,4 @@ storage = MemoryStorage()  # хранилище блока состояния
 
 bot = Bot(token=os.environ.get('TOKEN'))  # читаем токен
 dp = Dispatcher(bot, storage=storage)
-session = settings.Session()
+# session = settings.Session()

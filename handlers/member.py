@@ -1,10 +1,13 @@
 # handlers/member.py
 import os
 
+from sqlalchemy import select
+
 from src.utils import gac_statistic, get_new_day_start
 from src.player import PlayerData, PlayerScoreService
 from src.guild import GuildData
-from create_bot import bot, session
+from create_bot import bot
+from settings import async_session_maker
 from aiogram import types, Dispatcher
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -37,15 +40,26 @@ def handle_exception(future):
         print(f"Ошибка: {exception}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
+# async def command_start(message: types.Message):
+#     """Стартуем бот и обновляем БД"""
+#     await bot.send_message(message.chat.id, "Начинаем работу.\nОбновляем базу данных...\nПодождите...")
+#     loop = asyncio.get_event_loop()
+#     future = loop.run_in_executor(None, PlayerData().update_players_data)
+#     # future.add_done_callback(handle_exception)
+#     future2 = loop.run_in_executor(None, GuildData().build_db)
+#     # future2.add_done_callback(handle_exception)
+#     await bot.send_message(message.chat.id, "База данных обновляется в фоне.\nМожно приступать к работе.")
+
 async def command_start(message: types.Message):
     """Стартуем бот и обновляем БД"""
-    await bot.send_message(message.chat.id, "Начинаем работу.\nОбновляем базу данных...\nПодождите...")
-    loop = asyncio.get_event_loop()
-    future = loop.run_in_executor(None, PlayerData().update_players_data)
-    # future.add_done_callback(handle_exception)
-    future2 = loop.run_in_executor(None, GuildData().build_db)
-    # future2.add_done_callback(handle_exception)
-    await bot.send_message(message.chat.id, "База данных обновляется в фоне.\nМожно приступать к работе.")
+    try:
+        await bot.send_message(message.chat.id, "Начинаем работу.\nОБаза данных обновляется в фоне.\nМожно приступать к работе.")
+        await PlayerData().update_players_data()
+        await GuildData().build_db()
+    except Exception as e:
+        print(e)
+        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
 
 
 async def command_help(message: types.Message):
@@ -63,10 +77,7 @@ async def command_gac_statistic(message: types.Message):
     """Выводит инфо о ВА и ссылки на противников"""
     try:
         await message.reply(f"Добываю статистику. Ожидайте выполнения...")
-        loop = asyncio.get_event_loop()
-
-        st_1, st_2, st_3, st_4, st_5 = await loop.run_in_executor(None, gac_statistic)
-
+        st_1, st_2, st_3, st_4, st_5 = await gac_statistic()
         await bot.send_message(message.chat.id, text=st_1, parse_mode="Markdown")
         await bot.send_message(message.chat.id, text=st_2, parse_mode="Markdown")
         await bot.send_message(message.chat.id, text=st_3, parse_mode="Markdown")
@@ -80,7 +91,12 @@ async def get_user_data(message: types.Message):
     """"""
     player_name = message.text.split(maxsplit=1)[1]
     try:
-        player = session.query(Player).filter_by(name=player_name).first()
+        async with async_session_maker() as session:
+            new_day_start = get_new_day_start()
+            query = await session.execute(
+                select(Player).filter_by(name=player_name).filter(
+                    Player.update_time >= new_day_start))
+            player = query.scalars().first()
         player_str_list = PlayerData().extract_data(player)
         await bot.send_message(message.chat.id, player_str_list)
     except Exception as e:
@@ -89,7 +105,7 @@ async def get_user_data(message: types.Message):
 
 async def get_raid_points(message: types.Message):
     try:
-        message_strings = PlayerScoreService.get_raid_scores()
+        message_strings = await PlayerScoreService.get_raid_scores()
         await bot.send_message(message.chat.id, message_strings)
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
@@ -97,7 +113,7 @@ async def get_raid_points(message: types.Message):
 
 async def get_raid_points_all(message: types.Message):
     try:
-        message_strings = PlayerScoreService.get_raid_scores_all()
+        message_strings = await PlayerScoreService.get_raid_scores_all()
         await bot.send_message(message.chat.id, message_strings)
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
@@ -105,7 +121,7 @@ async def get_raid_points_all(message: types.Message):
 
 async def get_raid_lazy(message: types.Message):
     try:
-        message_strings = PlayerScoreService.get_reid_lazy_fools()
+        message_strings = await PlayerScoreService.get_reid_lazy_fools()
         await bot.send_message(message.chat.id, message_strings)
     except Exception as e:
         await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")

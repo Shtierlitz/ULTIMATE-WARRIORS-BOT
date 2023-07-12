@@ -3,14 +3,15 @@ import asyncio
 import os
 
 from create_bot import bot
-from create_bot import session
+# from create_bot import session
 from handlers.member import handle_exception
+from settings import async_session_maker
 from src.guild import GuildData
 from src.utils import get_new_day_start
 from src.player import Player, PlayerData, PlayerScoreService
 from aiogram.utils.exceptions import ChatNotFound
 
-from sqlalchemy import and_
+from sqlalchemy import and_, select, cast, Integer
 from dotenv import load_dotenv
 import random as rn
 
@@ -33,13 +34,18 @@ async def check_guild_points(*args, **kwargs):
     ]
     new_day_start = get_new_day_start()
 
-    existing_user_today = session.query(Player).filter(
-        and_(
-            Player.update_time >= new_day_start,
-            Player.tg_id != 'null',
-            Player.reid_points < 600
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(Player).where(
+                and_(
+                    Player.update_time >= new_day_start,
+                    Player.tg_id != 'null',
+                    cast(Player.reid_points, Integer) < 600
+                )
+            )
         )
-    ).all()
+        existing_user_today = result.scalars().all()
+
     print(len(existing_user_today))
     for player in existing_user_today:
         if player.tg_id != "null":
@@ -50,17 +56,14 @@ async def check_guild_points(*args, **kwargs):
         else:
             await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"У {player.name} нету идентификатора в боте.")
     # Отправляем офицерам напоминалку кто не сдал еще энку
-    message_strings = PlayerScoreService.get_reid_lazy_fools()
+    message_strings = await PlayerScoreService.get_reid_lazy_fools()
     await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message_strings)
 
 
 
 async def update_db(*args, **kwargs):
-    loop = asyncio.get_event_loop()
-    future = loop.run_in_executor(None, PlayerData().update_players_data)
-    future.add_done_callback(handle_exception)
-    future2 = loop.run_in_executor(None, GuildData().build_db)
-    future2.add_done_callback(handle_exception)
+    await PlayerData().update_players_data()
+    await GuildData().build_db()
 
 
 async def send_message_interval(*args, **kwargs):

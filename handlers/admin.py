@@ -3,13 +3,16 @@ from aiogram import types, Dispatcher
 import plotly.express as px
 from plotly import graph_objs as go
 from plotly import io as pio
-from create_bot import bot, session
+from sqlalchemy import select
+
+from create_bot import bot
 import io
 import json
 import os
 
 from db_models import Player
 from src.utils import split_list
+from settings import async_session_maker
 
 COMMANDS = {
     "admin": "Получить информацию о доступных командах администратора",
@@ -141,58 +144,63 @@ async def delete_player(message: types.Message):
 
 async def send_month_player_grafic(message: types.Message):
     """Отправляет график рейда игрока"""
-    try:
-        player_name = message.get_args()
-        if not player_name:
-            await message.reply(f"Неверный формат ввода. Правильно:\n/grafic имя_игрока\nЧерез пробел.")
-            return
+    # try:
+    player_name = message.get_args()
+    if not player_name:
+        await message.reply(f"Неверный формат ввода. Правильно:\n/grafic имя_игрока\nЧерез пробел.")
+        return
 
-        # Извлечение данных из базы данных
-        player_data = session.query(Player).filter_by(name=player_name).all()
+    # Извлечение данных из базы данных
+    async with async_session_maker() as session:
+        # player_data = session.query(Player).filter_by(name=player_name).all()
+        query = await session.execute(
+            select(Player).filter_by(name=player_name))
+        player_data = query.scalars().all()
 
-        # Проверка, есть ли данные
-        if not player_data:
-            await message.reply(f"No data found for player {player_name}")
-            return
+    # Проверка, есть ли данные
+    if not player_data:
+        await message.reply(f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
+        return
 
-        # Подготовка данных для построения графика
-        update_times = [player.update_time for player in player_data]
-        reid_points = [player.reid_points for player in player_data]
+    # Подготовка данных для построения графика
+    update_times = [player.update_time for player in player_data]
+    reid_points = [player.reid_points for player in player_data]
 
-        # Построение графика
-        fig = go.Figure(data=go.Scatter(
-            x=update_times,
-            y=reid_points,
-            mode='lines+markers+text',
-            text=reid_points,
-            textposition='top center'))
+    # Построение графика
+    fig = go.Figure(data=go.Scatter(
+        x=update_times,
+        y=reid_points,
+        mode='lines+markers+text',
+        text=reid_points,
+        textposition='top center'))
 
-        fig.update_layout(
-            title=f'Reid Points Over Month for {player_name}',
-            xaxis_title='Update Time',
-            yaxis_title='Reid Points',
-            yaxis=dict(
-                range=[-100, 700],
-                tickmode='linear',
-                tick0=0,
-                dtick=50
-            )
+    fig.update_layout(
+        title=f'Reid Points Over Month for {player_name}',
+        xaxis_title='Update Time',
+        yaxis_title='Reid Points',
+        yaxis=dict(
+            range=[-100, 700],
+            tickmode='linear',
+            tick0=0,
+            dtick=50
         )
+    )
 
-        # Сохранение графика в виде файла изображения
-        buf = io.BytesIO()
-        pio.write_image(fig, buf, format='png')
-        buf.seek(0)
+    # Сохранение графика в виде файла изображения
+    buf = io.BytesIO()
+    pio.write_image(fig, buf, format='png')
+    buf.seek(0)
 
-        await bot.send_photo(chat_id=message.chat.id, photo=buf)
-    except Exception as e:
-        await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+    await bot.send_photo(chat_id=message.chat.id, photo=buf)
+    # except Exception as e:
+    #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 async def send_month_total_grafic(message: types.Message):
     """Отправляет график рейда для всех игроков"""
     try:
         # Извлечение данных из базы данных
-        all_players = session.query(Player).all()
+        async with async_session_maker() as session:
+            all_players = session.query(Player).all()
         players_data = {}
 
         for player in all_players:

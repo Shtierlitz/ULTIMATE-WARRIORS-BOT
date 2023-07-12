@@ -3,15 +3,23 @@
 
 import os
 import requests
-from create_bot import session
+# from create_bot import session
 from datetime import datetime, timedelta, time
+
+from sqlalchemy import select
+
 from db_models import Player
+from settings import async_session_maker
 
 
-def gac_statistic() -> tuple:
+async def gac_statistic() -> tuple:
     """Выдает статистику по игрокам зарегались на ВГ или нет."""
     new_day_start = get_new_day_start()
-    players_list = session.query(Player).filter(Player.update_time >= new_day_start).all()
+    async with async_session_maker() as session:
+        query = await session.execute(
+            select(Player).filter(
+                Player.update_time >= new_day_start))
+        players_list = query.scalars().all()
     result = []
     count_true = 0
     count_false = 0

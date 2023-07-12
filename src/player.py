@@ -8,7 +8,7 @@ import pytz
 import requests
 from sqlalchemy import func
 
-from create_bot import session
+# from create_bot import session
 from datetime import datetime, timedelta, time
 
 from db_models import Player, Guild
@@ -18,13 +18,15 @@ from dotenv import load_dotenv
 from local_settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
 from src.utils import get_new_day_start
+from sqlalchemy import select, delete
+
 
 load_dotenv()
 
-utc_tz = timezone('UTC')
-
-tz = str(os.environ.get("TIME_ZONE"))
-time_tz = timezone(tz)
+# utc_tz = timezone('UTC')
+#
+# tz = str(os.environ.get("TIME_ZONE"))
+# time_tz = timezone(tz)
 
 API_LINK = f"{os.environ.get('API_HOST')}:{os.environ.get('API_PORT')}"
 GUILD_POST_DATA = {
@@ -39,7 +41,7 @@ GUILD_POST_DATA = {
 class PlayerData:
     @staticmethod
     def get_swgoh_player_data(ally_code):
-        player_request = requests.get(f'http://api.swgoh.gg/player/{ally_code}/')
+        player_request = requests.get(f'http://api.swgoh.gg/player/{str(ally_code)}/')
         if player_request.status_code == 200:
             data = player_request.json()
             return data['data']
@@ -58,65 +60,58 @@ class PlayerData:
         except Exception as e:
             raise AddIdsError(f"An error occurred while getting ids.json data: {e}") from e
 
-    def create_or_update_player_data(self, data: dict):
-        """Создает или обновляет данные пользователя на текущий день"""
-        # try:
+    async def create_or_update_player_data(self, data: dict):
         new_day_start = get_new_day_start()
-
         async with async_session_maker() as session:
-            existing_user_today = session.query(Player).filter_by(ally_code=data['ally_code']).filter(
-                Player.update_time >= new_day_start).first()
+            existing_user_today = await session.execute(
+                select(Player).filter_by(ally_code=data['ally_code']).filter(
+                    Player.update_time >= new_day_start))
+            existing_user_today = existing_user_today.scalars().first()
 
-            # Если пользователь уже существует
             if existing_user_today:
                 print(f"{data['name']}: old")
-                self.__set_player_attributes(existing_user_today, data)
-                session.commit()
+                await self.__set_player_attributes(existing_user_today, data)
+
+                await session.commit()
             else:
                 print(f"{data['name']}: new")
-                # Добавляем нового пользователя
-                new_user = self.__set_player_attributes(Player(), data)
+                new_user = await self.__set_player_attributes(Player(), data)
                 session.add(new_user)
-                session.commit()
+                await session.commit()
 
-                # Удаление записей старше месяца
             month_old_date = datetime.now() - timedelta(days=30)
-            session.query(Player).filter(Player.update_time < month_old_date).delete()
-            session.commit()
-        # except Exception as e:
-        #     raise DatabaseBuildError(f"An error occurred while building the Player database: {e}") from e
+            await session.execute(delete(Player).where(Player.update_time < month_old_date))
+            await session.commit()
 
-    def __set_player_attributes(self, player, data):
+
+
+    async def __set_player_attributes(self, player, data):
         """Устанавливает значения из переданного словаря в модель Player"""
         player.name = data['name']
-
-        # конвертирует дату вступления в гильдии в удобочитабельный формат нужного часового пояса
-        guild_join_time_utc = datetime.strptime(data['guild_join_time'], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=utc_tz)
-        player.guild_join_time = guild_join_time_utc.astimezone(time_tz)
-
-        # конвертирует дату последей активности в удобочитабеольный формат нужного часового пояса
-        timestamp_ms = data['lastActivityTime']
-        timestamp = int(timestamp_ms) / 1000
-        last_activity_time_utc = datetime.fromtimestamp(timestamp).replace(tzinfo=utc_tz)
-        player.lastActivityTime = last_activity_time_utc.astimezone(time_tz)
-
-        player.reid_points = int(data['reid_points'])
-        player.guild_currency_earned = int(data['guild_points'])
-        player.player_id = data['playerId']
+        player.ally_code = data['ally_code']
         player.tg_id = data['existing_player']['tg_id']
         player.tg_nic = data['existing_player']['tg_nic']
-        player.update_time = datetime.now(time_tz)
-        player.ally_code = data['ally_code']
-        player.arena_leader_base_id = data['arena_leader_base_id']
-        player.arena_rank = data['arena_rank']
+        player.update_time = datetime.now()
+        # update_time
+        player.reid_points = data['reid_points']
+
+        timestamp_seconds = int(data['lastActivityTime']) / 1000  # преобразуем в секунды
+        date_object = datetime.utcfromtimestamp(timestamp_seconds)
+        player.lastActivityTime = date_object
+
         player.level = data['level']
-
-        last_updated_utc = datetime.strptime(data['last_updated'], '%Y-%m-%dT%H:%M:%S').replace(tzinfo=utc_tz)
-        player.last_swgoh_updated = last_updated_utc.astimezone(time_tz)
-
+        player.player_id = data['playerId']
+        player.arena_rank = data['arena_rank']
         player.galactic_power = data['galactic_power']
         player.character_galactic_power = data['character_galactic_power']
         player.ship_galactic_power = data['ship_galactic_power']
+        player.guild_join_time = datetime.strptime(data['guild_join_time'], "%Y-%m-%dT%H:%M:%S")
+        player.url = 'https://swgoh.gg' + data['url']
+
+        last_updated_utc = datetime.strptime(data['last_updated'], '%Y-%m-%dT%H:%M:%S')
+        player.last_swgoh_updated = last_updated_utc
+        player.guild_currency_earned = data['guild_points']
+        player.arena_leader_base_id = data['arena_leader_base_id']
         player.ship_battles_won = data['ship_battles_won']
         player.pvp_battles_won = data['pvp_battles_won']
         player.pve_battles_won = data['pve_battles_won']
@@ -133,11 +128,11 @@ class PlayerData:
         player.season_banners_earned = data['season_banners_earned']
         player.season_offensive_battles_won = data['season_offensive_battles_won']
         player.season_territories_defeated = data['season_territories_defeated']
-        player.url = 'https://swgoh.gg' + data['url']
+
 
         return player
 
-    def update_players_data(self):
+    async def update_players_data(self):
         """Вытаскивает данные о гильдии и участниках, а после
          по имени участника гоняет циклом обновление бд для каждого участника"""
         # try:
@@ -152,8 +147,6 @@ class PlayerData:
         comlink_request.raise_for_status()
         raw_data = comlink_request.json()
         guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
-        # except requests.exceptions.HTTPError:
-        #     raise Status404Error(f"Комлинк с гильдией не отвечает при построении базы для игрока")
 
         for i in data['data']['members']:
             if str(i['ally_code']) in existing_players:
@@ -180,20 +173,14 @@ class PlayerData:
                 final_data.update({'guild_points': member_contribution_dict[1]})
                 final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
 
-                self.create_or_update_player_data(final_data)
+                await self.create_or_update_player_data(final_data)
 
-                #     except Exception as e:
-                #         raise Status404Error(
-                #             f"Комлинк с гильдией не отвечает при построении базы для игрока {e}") from e
-                #
             else:
                 error_list.append(f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json")
 
         print("\n".join(error_list))
         print("Данные игроков в базе обновлены.")
 
-        # except Exception as e:
-        #     raise Status404Error(f"An error occurred while building the Player database: {e}") from e
 
     def extract_data(self, player: Player):
         """Выводит все данные по игроку"""
@@ -210,15 +197,23 @@ class PlayerData:
 
 class PlayerScoreService:
     @staticmethod
-    def get_recent_players():
+    async def get_recent_players():
         """Создает список из всех записей о согильдийцах за текущие игровые сутки"""
         new_day_start = get_new_day_start()
-        return session.query(Player).filter(Player.update_time >= new_day_start).all()
+        async with async_session_maker() as session:  # открываем асинхронную сессию
+            query = await session.execute(
+                select(Player).filter(
+                    Player.update_time >= new_day_start))
+            result = query.scalars().all()
+            return result
 
     @staticmethod
-    def get_all_players():
+    async def get_all_players():
         """Список всех записей по игрокам за все время"""
-        return session.query(Player).all()
+        async with async_session_maker() as session:  # открываем асинхронную сессию
+            query = await session.execute(select(Player))  # выполняем асинхронный запрос
+            return query.scalars().all()
+
 
     @staticmethod
     def get_sorted_scores(players):
@@ -226,19 +221,23 @@ class PlayerScoreService:
         # Создаем словарь, где будем суммировать очки
         player_scores = defaultdict(int)
 
+
         # Это переменная для подсчета общего количества очков
         total_points = 0
 
         # Проходим по всем записям и суммируем очки
         for player in players:
-            player_scores[player.name] += player.reid_points
-            total_points += player.reid_points
+            # Проверяем, является ли reid_points строкой и преобразовываем ее в int, если это так
+            reid_points = int(player.reid_points) if isinstance(player.reid_points, str) else player.reid_points
+
+            player_scores[player.name] += reid_points
+            total_points += reid_points
 
         return sorted(player_scores.items(), key=lambda x: x[1], reverse=True), total_points
 
     @staticmethod
-    def get_raid_scores():
-        recent_players = PlayerScoreService.get_recent_players()
+    async def get_raid_scores():
+        recent_players = await PlayerScoreService.get_recent_players()
         if not recent_players:
             return "Нет данных об игроках."
         sorted_scores, _ = PlayerScoreService.get_sorted_scores(recent_players)
@@ -250,8 +249,8 @@ class PlayerScoreService:
         return f"\n{'-' * 30}\n".join(scores)
 
     @staticmethod
-    def get_raid_scores_all():
-        all_players = PlayerScoreService.get_all_players()
+    async def get_raid_scores_all():
+        all_players = await PlayerScoreService.get_all_players()
         if not all_players:
             return "Нет данных об игроках."
         sorted_scores, total_points = PlayerScoreService.get_sorted_scores(all_players)
@@ -261,8 +260,8 @@ class PlayerScoreService:
         return f"\n{'-' * 30}\n".join(scores)
 
     @staticmethod
-    def get_reid_lazy_fools():
-        recent_players = PlayerScoreService.get_recent_players()
+    async def get_reid_lazy_fools():
+        recent_players = await PlayerScoreService.get_recent_players()
         if not recent_players:
             return "Нет данных об игроках."
         sorted_scores, _ = PlayerScoreService.get_sorted_scores(recent_players)

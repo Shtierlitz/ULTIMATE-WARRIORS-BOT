@@ -18,6 +18,7 @@ load_dotenv()
 
 async def on_startup(_):  # функция настроек старта бота.
     print("Бот вышел в онлайн")  # Выводит в консоль в файле bat
+    await settings.create_tables()
     # необходимо подключить в executor.start_polling
     # session = settings.Session()
     scheduler = AsyncIOScheduler(timezone=os.environ.get("TIME_ZONE", "UTC"))

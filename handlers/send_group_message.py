@@ -3,7 +3,10 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from create_bot import session, bot
+from sqlalchemy import select
+
+from create_bot import bot
+from settings import async_session_maker
 from src.player import Player
 from src.utils import get_new_day_start
 
@@ -33,24 +36,27 @@ async def process_message(message: types.Message, state: FSMContext):
 
         new_day_start = get_new_day_start()
 
-        all_users = session.query(Player.tg_nic, Player.tg_id).filter(
-                    Player.update_time >= new_day_start
-                ).all()
+        async with async_session_maker() as session:
+            query = await session.execute(
+                select(Player).filter(
+                    Player.update_time >= new_day_start))
+            all_users = query.scalars().all()
+
         print(data['users'])
-        users_from_db = {user for user in all_users if user.tg_nic in data['users']}
-        print(users_from_db)
+        users_from_db = {user.tg_nic: user.tg_id for user in all_users if user.tg_nic in data['users']}
+        # print(users_from_db)
 
         failed_users = []  # Список пользователей, которым не удалось отправить сообщение
 
         if users_from_db:
             # Отправляем сообщение каждому пользователю
-            for user in users_from_db:
-                print(user)
+            for user_nic, user_id in users_from_db.items():
+                # print(user)
                 try:
-                    await bot.send_message(user[1], data['message'])
+                    await bot.send_message(user_id, data['message'])
                 except Exception as e:
-                    failed_users.append(user[0])  # Добавляем пользователя в список неудач
-                    print(f"Не удалось отправить сообщение пользователю {user[0]}: {e}")
+                    failed_users.append(user_nic)  # Добавляем пользователя в список неудач
+                    print(f"Не удалось отправить сообщение пользователю {user_nic}: {e}")
 
         if failed_users:
             await message.answer("Не удалось отправить сообщения следующим пользователям: " + ", ".join(failed_users))
@@ -58,6 +64,8 @@ async def process_message(message: types.Message, state: FSMContext):
             await message.answer("Сообщения были отправлены.")
 
     await state.finish()
+
+
 
 
 

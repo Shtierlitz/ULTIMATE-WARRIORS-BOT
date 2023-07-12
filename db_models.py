@@ -19,10 +19,10 @@ class Guild(Base):
     name = Column(String(50))
     guild_id = Column(String(500))
     credo = Column(String(500))
-    galactic_power = Column(Integer)
+    galactic_power = Column(String(500))
     required_level = Column(Integer)
     total_members = Column(Integer)
-    guild_reset_time = Column(Integer)
+    guild_reset_time = Column(DateTime, default=datetime.now())
     last_db_update_time = Column(DateTime, default=datetime.now(time_tz))
     id = Column(Integer, primary_key=True)
 
@@ -34,22 +34,22 @@ class Player(Base):
     __tablename__ = 'players'
     id = Column(Integer, primary_key=True)      # Идентификатор в базе
     name = Column(String(100))                  # имя аккаунта
-    ally_code = Column(Integer)                 # код союзника
-    tg_id = Column(Integer)                     # идентификатор телеграма
+    ally_code = Column(Integer)               # код союзника
+    tg_id = Column(String(100))                   # идентификатор телеграма
     tg_nic = Column(String(100))                # ник в телеге
-    update_time = Column(DateTime, default=datetime.now(time_tz))  # дата обновления в бд
-    reid_points = Column(Integer)               # сданые очки рейдов в день
-    lastActivityTime = Column(DateTime, default=datetime.now(time_tz))  # последний раз как заходил в игру
+    update_time = Column(DateTime, default=datetime.now())  # дата обновления в бд
+    reid_points = Column(String(100))             # сданые очки рейдов в день
+    lastActivityTime = Column(DateTime, default=datetime.now())  # последний раз как заходил в игру
     level = Column(Integer)                     # уровень аккаунта
-    player_id = Column(Integer)                 # id игрока в системе игры
-    arena_rank = Column(Integer)                # ранг арены
+    player_id = Column(String(100))                 # id игрока в системе игры
+    arena_rank = Column(Integer)               # ранг арены
     galactic_power = Column(Integer)            # общая галактическая мощь
-    character_galactic_power = Column(Integer)  # Галактическая мощь по персонажам
-    ship_galactic_power = Column(Integer)       # Галактическая мощь по флоту
-    guild_join_time = Column(DateTime, default=datetime.now(time_tz))   # дата вступления в гильдию
+    character_galactic_power = Column(Integer)    # Галактическая мощь по персонажам
+    ship_galactic_power = Column(Integer)         # Галактическая мощь по флоту
+    guild_join_time = Column(DateTime, default=datetime.now())   # дата вступления в гильдию
     url = Column(String(5000))                  # ссылка на аккаунт игрока на swgoh
-    last_swgoh_updated = Column(DateTime, default=datetime.now(time_tz))  # дата обновления в swgoh.gg
-    guild_currency_earned = Column(Integer)        # заработанная и собранная валюта гильдии в день
+    last_swgoh_updated = Column(DateTime, default=datetime.now())  # дата обновления в swgoh.gg
+    guild_currency_earned = Column(String(100))        # заработанная и собранная валюта гильдии в день
     arena_leader_base_id = Column(String(50))
     ship_battles_won = Column(Integer)
     pvp_battles_won = Column(Integer)
