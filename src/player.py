@@ -92,7 +92,6 @@ class PlayerData:
         player.tg_id = data['existing_player']['tg_id']
         player.tg_nic = data['existing_player']['tg_nic']
         player.update_time = datetime.now()
-        # update_time
         player.reid_points = data['reid_points']
 
         timestamp_seconds = int(data['lastActivityTime']) / 1000  # преобразуем в секунды
@@ -253,9 +252,14 @@ class PlayerScoreService:
         all_players = await PlayerScoreService.get_all_players()
         if not all_players:
             return "Нет данных об игроках."
+        async with async_session_maker() as session:  # открываем асинхронную сессию
+            query = await session.execute(
+                select(Player).order_by(Player.update_time).limit(1))
+            player: Player = query.scalar_one()
+
         sorted_scores, total_points = PlayerScoreService.get_sorted_scores(all_players)
         scores = PlayerScoreService.format_scores(sorted_scores, filter_points=None, total=False)
-        scores.append(f"Всего купонов за месяц: {total_points}")
+        scores.append(f"Всего купонов от {player.update_time.strftime('%d.%m')}: {total_points}")
         scores.insert(0, f"\nСписок всех купонов за месяц:\n")
         return f"\n{'-' * 30}\n".join(scores)
 
