@@ -19,17 +19,12 @@ load_dotenv()
 async def on_startup(_):  # функция настроек старта бота.
     print("Бот вышел в онлайн")  # Выводит в консоль в файле bat
     await settings.create_tables()
-    # необходимо подключить в executor.start_polling
-    # session = settings.Session()
     scheduler = AsyncIOScheduler(timezone=os.environ.get("TIME_ZONE", "UTC"))
     scheduler.add_job(apsched.check_guild_points, 'cron', hour=int(os.environ.get("REMIND_GUILD_POINTS_HOUR", 14)),
                       minute=int(os.environ.get("REMIND_GUILD_POINTS_MINUTES", 30)),
                       timezone=os.environ.get("TIME_ZONE", "UTC"))
     scheduler.add_job(apsched.update_db, trigger='interval', minutes=5)
-    # scheduler.add_job(apsched.send_message, trigger='date', next_run_time=datetime.now() + timedelta(seconds=12))
-    # scheduler.add_job(apsched.send_message_cron, trigger='cron', hour=datetime.now().hour,
-    #                   minute=datetime.now().minute + 1, start_date=datetime.now())
-    # scheduler.add_job(apsched.send_message_interval, trigger='interval', seconds=60)
+
     scheduler.start()
 
 

@@ -91,7 +91,6 @@ async def player_data_info(message: types.Message, state: FSMContext):
         if key == 'back':
             await back_handler(message, state)
         elif key == 'all_data':
-            # player = session.query(Player).filter_by(name=player_name).first()
             async with async_session_maker() as session:
                 query = await session.execute(
                     select(Player).filter_by(name=player_name)
@@ -99,6 +98,12 @@ async def player_data_info(message: types.Message, state: FSMContext):
                 player = query.scalars().first()
             player_str_list = PlayerData().extract_data(player)
             await bot.send_message(message.chat.id, player_str_list)
+        elif key == "GP_month":
+            image = await PlayerData.get_player_gp_graphic(player_name, 'month')
+            await bot.send_photo(chat_id=message.chat.id, photo=image)
+        elif key == "GP_year":
+            image = await PlayerData.get_player_gp_graphic(player_name, 'year')
+            await bot.send_photo(chat_id=message.chat.id, photo=image)
         elif key in player.__dict__:  # Проверяем, является ли ввод ключом в словаре атрибутов игрока
             player_data = player.__dict__[key]
             await message.reply(f"Данные {key} о пользователе {player.name}:\n{player_data}")
@@ -135,8 +140,11 @@ async def back_handler(message: types.Message, state: FSMContext):
         elif current_state == "PlayerState:player_name":
             await PlayerState.initial_state.set()
             await message.answer('Вернулись к началу', reply_markup=types.ReplyKeyboardRemove())
+            # Добавьте вызов функции, которая обрабатывает начальное состояние
+            await player_buttons(message, state)
         else:
             await state.finish()
+
 
 
 def register_handlers_player(dp: Dispatcher):

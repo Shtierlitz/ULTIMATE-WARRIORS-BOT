@@ -11,9 +11,10 @@ import json
 import os
 
 from db_models import Player
+from handlers.player_data import player_data_info
 from src.guild import GuildData
 from src.player import PlayerData
-from src.utils import split_list
+from src.utils import split_list, get_month_player_graphic
 from settings import async_session_maker
 
 COMMANDS = {
@@ -21,7 +22,9 @@ COMMANDS = {
     "add_player": "Записать нового игрока в базу (через пробел 3 значения - имя код_союзника тг_id)",
     "players_list": "Вывести все записи по игрокам (не стоит использовать в общих чатах)",
     "delete_player": "Удалить игрока из базы по имени",
-    "grafic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц",
+    "graphic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц",
+    "guild_month": "Выводит график росто ГМ гильдии за месяц",
+    "guild_year": "Выводит график роста ГМ гильдии за год",
     "refresh": "Экстреннее обновление базы данных"
     # Добавьте здесь другие команды по мере необходимости
 }
@@ -45,7 +48,7 @@ async def command_db_extra(message: types.Message):
         try:
             await bot.send_message(message.chat.id,
                                    "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
-            # await PlayerData().update_players_data()
+            await PlayerData().update_players_data()
             await GuildData().build_db()
         except Exception as e:
             print(e)
@@ -120,8 +123,8 @@ async def players_list(message: types.Message):
                 final_msg_1 = ''.join(final_lst_1)
                 final_msg_2 = ''.join(final_lst_2)
 
-                await bot.send_message(message.chat.id, final_msg_1)
-                await bot.send_message(message.chat.id, final_msg_2)
+                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), final_msg_1)
+                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), final_msg_2)
             else:
                 await bot.send_message(message.chat.id, "Файл ids.json не найден.")
         except Exception as e:
@@ -167,7 +170,7 @@ async def delete_player(message: types.Message):
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
-async def send_month_player_grafic(message: types.Message):
+async def send_month_player_graphic(message: types.Message):
     """Отправляет график рейда игрока"""
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
@@ -176,49 +179,11 @@ async def send_month_player_grafic(message: types.Message):
             if not player_name:
                 await message.reply(f"Неверный формат ввода. Правильно:\n/grafic имя_игрока\nЧерез пробел.")
                 return
-
-            # Извлечение данных из базы данных
-            async with async_session_maker() as session:
-                # player_data = session.query(Player).filter_by(name=player_name).all()
-                query = await session.execute(
-                    select(Player).filter_by(name=player_name))
-                player_data = query.scalars().all()
-
-            # Проверка, есть ли данные
-            if not player_data:
-                await message.reply(
-                    f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
-                return
-
-            # Подготовка данных для построения графика
-            update_times = [player.update_time for player in player_data]
-            reid_points = [player.reid_points for player in player_data]
-
-            # Построение графика
-            fig = go.Figure(data=go.Scatter(
-                x=update_times,
-                y=reid_points,
-                mode='lines+markers+text',
-                text=reid_points,
-                textposition='top center'))
-
-            fig.update_layout(
-                title=f'Reid Points Over Month for {player_name}',
-                xaxis_title='Update Time',
-                yaxis_title='Reid Points',
-                yaxis=dict(
-                    range=[-100, 700],
-                    tickmode='linear',
-                    tick0=0,
-                    dtick=50
-                )
-            )
-
-            # Сохранение графика в виде файла изображения
-            buf = io.BytesIO()
-            pio.write_image(fig, buf, format='png')
-            buf.seek(0)
-            await bot.send_photo(chat_id=message.chat.id, photo=buf)
+            if "@" in player_name:
+                player_name = player_name.replace("@", "")
+            buf: io.BytesIO = await get_month_player_graphic(message, player_name)
+            if buf:
+                await bot.send_photo(chat_id=message.chat.id, photo=buf)
         except Exception as e:
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
@@ -251,6 +216,6 @@ def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(players_list, commands=['players_list'], is_chat_admin=True)
     dp.register_message_handler(delete_player, commands=['delete_player'], is_chat_admin=True)
     dp.register_message_handler(admin_command_help, commands=['admin'], is_chat_admin=True)
-    dp.register_message_handler(send_month_player_grafic, commands=['grafic'], is_chat_admin=True)
+    dp.register_message_handler(send_month_player_graphic, commands=['graphic'], is_chat_admin=True)
     dp.register_message_handler(send_month_guild_grafic, commands=['guild_month'], is_chat_admin=True)
     dp.register_message_handler(send_year_guild_grafic, commands=['guild_year'], is_chat_admin=True)

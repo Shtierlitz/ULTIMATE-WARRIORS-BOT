@@ -52,8 +52,10 @@ async def create_player_info_keyboard(player_name: str):
     if player:
         keyboard.row(KeyboardButton("back"), KeyboardButton("cencel")) # Создать отдельную строку для кнопки "cencel"
         keyboard.row(KeyboardButton("all_data"))
+        keyboard.row(KeyboardButton("GP_month"), KeyboardButton("GP_year"))
 
         row_btns = []  # Создать список для кнопок строк
+
         for index, column in enumerate(Player.__table__.columns):  # Получить все поля модели Player
             if column.name in ('name', 'tg_id', 'id'):  # Если имя поля 'tg_id', пропустите его
                 continue

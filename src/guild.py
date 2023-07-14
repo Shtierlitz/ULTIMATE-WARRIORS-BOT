@@ -125,13 +125,39 @@ class GuildData:
         else:
             one_year_ago = new_day_start - relativedelta(months=12)
             async with async_session_maker() as session:
-                guild_data = await session.execute(
-                    select(Guild).filter(
-                        Guild.last_db_update_time >= one_year_ago))
-                guild_data = guild_data.scalars().all()
+                # Получаем все данные для игрока
+                stmt = select(Guild).filter(Guild.last_db_update_time >= one_year_ago)
+
+                all_data = await session.execute(stmt)
+                all_data = all_data.scalars().all()
+
+                # Сортируем данные по дате обновления
+                all_data.sort(key=lambda x: x.last_db_update_time)
+
+                # Берем первую запись для каждого месяца
+                guild_data = []
+                current_month = None
+                for record in all_data:
+                    if record.last_db_update_time.month != current_month:
+                        guild_data.append(record)
+                        current_month = record.last_db_update_time.month
+
+
         # Создаем график с использованием plotly
-        x_values = [guild.last_db_update_time for guild in guild_data]
+        x_values = [guild.last_db_update_time.strftime("%d-%m-%Y") for guild in guild_data]
         y_values = [guild.galactic_power for guild in guild_data]
+        # Сначала объединяем списки в список кортежей
+        data = list(zip(x_values, y_values))
+
+        # Сортируем список кортежей по дате
+        data.sort(key=lambda x: x[0])
+        if period == "month":
+            data.pop()
+
+        # Разделяем отсортированный список кортежей обратно на два списка
+        x_values, y_values = zip(*data)
+
+        difference_gp = int(y_values[-1]) - int(y_values[0])
 
         fig = go.Figure(data=go.Scatter(
             x=x_values,
@@ -145,9 +171,40 @@ class GuildData:
             yaxis_title='Galactic Power',
 
         )
-        # fig = go.Figure(data=go.Scatter(x=x_values, y=y_values))
 
-        # fig.update_yaxes(title="Galactic Power (GP)", tickformat=',')  # Изменить формат подписей оси Y
+        # Добавляем аннотацию с этой разницей
+        fig.add_annotation(
+            xref='paper', x=1, yref='paper', y=0,
+            text=f"Total difference: {difference_gp:,}",
+            showarrow=False,
+            font=dict(
+                size=14,
+                color="#ffffff"
+            ),
+            align="right",
+            bordercolor="#c7c7c7",
+            borderwidth=2,
+            borderpad=4,
+            bgcolor="#ff7f0e",
+            opacity=0.8
+        )
+
+        fig.add_annotation(
+            xref='paper', x=0, yref='paper', y=1,
+            text=f"Last value: {int(y_values[-1]):,}",
+            showarrow=False,
+            font=dict(
+                size=14,
+                color="#ffffff"
+            ),
+            align="right",
+            bordercolor="#c7c7c7",
+            borderwidth=2,
+            borderpad=4,
+            bgcolor="#666bff",
+            opacity=0.8
+        )
+
 
         buf = io.BytesIO()
         pio.write_image(fig, buf, format='png')

@@ -1,15 +1,18 @@
 # api_utils.py
-
-
+import io
 import os
 import requests
 # from create_bot import session
 from datetime import datetime, timedelta, time
 
-from sqlalchemy import select
+from aiogram import types
+from sqlalchemy import select, or_
 
+from create_bot import bot
 from db_models import Player
 from settings import async_session_maker
+from plotly import graph_objs as go
+from plotly import io as pio
 
 
 async def gac_statistic() -> tuple:
@@ -73,3 +76,49 @@ def get_new_day_start() -> datetime:
         new_day_start = new_day_start - timedelta(days=1)
 
     return new_day_start
+
+
+async def get_month_player_graphic(message: types.Message, player_name: str) -> io.BytesIO or None:
+    # Извлечение данных из базы данных
+    async with async_session_maker() as session:
+        query = await session.execute(
+            select(Player).filter(or_(Player.name == player_name, Player.tg_nic == player_name))
+        )
+        player_data = query.scalars().all()
+
+    # Проверка, есть ли данные
+    if not player_data:
+        await bot.send_message(message.chat.id,
+                               text=f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
+        return
+
+    # Подготовка данных для построения графика
+    data = sorted([(player.update_time, int(player.reid_points)) for player in player_data])
+    update_times, reid_points = zip(*data)
+
+    # Построение графика
+    fig = go.Figure(data=go.Scatter(
+        x=update_times,
+        y=reid_points,
+        mode='lines+markers+text',
+        text=reid_points,
+        textposition='top center'))
+
+    fig.update_layout(
+        title=f'Reid Points Over Month for {player_name}',
+        xaxis_title='Update Time',
+        yaxis_title='Reid Points',
+        yaxis=dict(
+            range=[-100, 700],
+            tickmode='linear',
+            tick0=0,
+            dtick=50
+        )
+    )
+
+    # Сохранение графика в виде файла изображения
+    buf = io.BytesIO()
+    pio.write_image(fig, buf, format='png')
+    buf.seek(0)
+
+    return buf

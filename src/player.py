@@ -1,16 +1,16 @@
 # src/player.py
-
+import io
 import json
 import os
 from collections import defaultdict
 
 import pytz
 import requests
-from sqlalchemy import func
+from dateutil.relativedelta import relativedelta
 
-# from create_bot import session
 from datetime import datetime, timedelta, time
-
+import plotly.graph_objects as go
+import plotly.io as pio
 from db_models import Player, Guild
 from pytz import timezone
 from dotenv import load_dotenv
@@ -18,8 +18,7 @@ from dotenv import load_dotenv
 from local_settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
 from src.utils import get_new_day_start
-from sqlalchemy import select, delete
-
+from sqlalchemy import select, delete, func, text
 
 load_dotenv()
 
@@ -83,8 +82,6 @@ class PlayerData:
             await session.execute(delete(Player).where(Player.update_time < month_old_date))
             await session.commit()
 
-
-
     async def __set_player_attributes(self, player, data):
         """Устанавливает значения из переданного словаря в модель Player"""
         player.name = data['name']
@@ -127,7 +124,6 @@ class PlayerData:
         player.season_banners_earned = data['season_banners_earned']
         player.season_offensive_battles_won = data['season_offensive_battles_won']
         player.season_territories_defeated = data['season_territories_defeated']
-
 
         return player
 
@@ -180,12 +176,101 @@ class PlayerData:
         print("\n".join(error_list))
         print("Данные игроков в базе обновлены.")
 
+    @staticmethod
+    async def get_player_gp_graphic(player_name, period):
+        new_day_start = get_new_day_start()
+        if period == "month":
+            one_month_ago = new_day_start - relativedelta(months=1)  # Вычислить дату один месяц назад
+            async with async_session_maker() as session:
+                player_data = await session.execute(
+                    select(Player).filter_by(name=player_name).filter(
+                        Player.update_time >= one_month_ago))  # Использовать эту дату в фильтре
+                player_data = player_data.scalars().all()
+        else:
+            one_year_ago = new_day_start - relativedelta(months=12)
+            async with async_session_maker() as session:
+                # Получаем все данные для игрока
+                stmt = select(Player).filter(Player.name == player_name, Player.update_time >= one_year_ago)
+
+                all_data = await session.execute(stmt)
+                all_data = all_data.scalars().all()
+
+                # Сортируем данные по дате обновления
+                all_data.sort(key=lambda x: x.update_time)
+
+                # Берем первую запись для каждого месяца
+                player_data = []
+                current_month = None
+                for record in all_data:
+                    if record.update_time.month != current_month:
+                        player_data.append(record)
+                        current_month = record.update_time.month
+
+        # Создаем график с использованием plotly
+        x_values = [player.update_time for player in player_data]
+        y_values = [player.galactic_power for player in player_data]
+
+        fig = go.Figure(data=go.Scatter(
+            x=x_values,
+            y=y_values,
+            mode='lines+markers',
+            textposition='top center',
+        ))
+
+        fig.update_layout(
+            title=f'Raise {player_name}\'s galactic power per {period}',
+            xaxis_title='Update Time',
+            yaxis_title='Galactic Power',
+        )
+
+        # Вычисляем разницу между самым поздним и самым ранним значением
+        difference_gp = y_values[-1] - y_values[0]
+
+        # Добавляем аннотацию с этой разницей
+        fig.add_annotation(
+            xref='paper', x=1, yref='paper', y=0,
+            text=f"Total difference: {difference_gp:,}",
+            showarrow=False,
+            font=dict(
+                size=14,
+                color="#ffffff"
+            ),
+            align="right",
+            bordercolor="#c7c7c7",
+            borderwidth=2,
+            borderpad=4,
+            bgcolor="#ff7f0e",
+            opacity=0.8
+        )
+
+        fig.add_annotation(
+            xref='paper', x=0, yref='paper', y=1,
+            text=f"Last value: {y_values[-1]:,}",
+            showarrow=False,
+            font=dict(
+                size=14,
+                color="#ffffff"
+            ),
+            align="right",
+            bordercolor="#c7c7c7",
+            borderwidth=2,
+            borderpad=4,
+            bgcolor="#666bff",
+            opacity=0.8
+        )
+
+        buf = io.BytesIO()
+        pio.write_image(fig, buf, format='png')
+        buf.seek(0)
+
+        return buf
 
     def extract_data(self, player: Player):
-        """Выводит все данные по игроку"""
+        """Выводит все данные по игроку в виде строки"""
         data_dict = player.__dict__
         formatted_string = "\n".join(
-            f"{key}: {value}\n{'-' * 30}" for key, value in data_dict.items() if not key.startswith('_') and key not in ('id', 'tg_id'))
+            f"{key}: {value}\n{'-' * 30}" for key, value in data_dict.items() if
+            not key.startswith('_') and key not in ('id', 'tg_id'))
         return formatted_string
 
 
@@ -208,13 +293,11 @@ class PlayerScoreService:
             query = await session.execute(select(Player))  # выполняем асинхронный запрос
             return query.scalars().all()
 
-
     @staticmethod
     def get_sorted_scores(players):
 
         # Создаем словарь, где будем суммировать очки
         player_scores = defaultdict(int)
-
 
         # Это переменная для подсчета общего количества очков
         total_points = 0
