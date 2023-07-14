@@ -1,6 +1,5 @@
 # src/guild.py
-
-
+import io
 import os
 
 import pytz
@@ -14,9 +13,12 @@ from datetime import datetime, timedelta, time
 from db_models import Player, Guild
 from pytz import timezone
 from dotenv import load_dotenv
-
+from dateutil.relativedelta import relativedelta
 from src.errors import Status404Error, DatabaseBuildError
 from src.utils import get_new_day_start
+
+import plotly.graph_objects as go
+import plotly.io as pio
 
 load_dotenv()
 
@@ -33,6 +35,7 @@ GUILD_POST_DATA = {
     },
     "enums": False
 }
+
 
 class GuildData:
 
@@ -65,7 +68,11 @@ class GuildData:
         guild.total_members = data['total_members']
         guild.required_level = data['required_level']
         guild.galactic_power = data['galactic_power']
-        guild.last_db_update_time = datetime.now(pytz.UTC).replace(tzinfo=None)
+
+        # преобразовываем время в вашу временную зону и удаляем информацию о временной зоне перед записью в базу данных
+        now = datetime.now(pytz.UTC).astimezone(time_tz).replace(tzinfo=None)
+        guild.last_db_update_time = now
+
         timestamp_seconds = int(data['guild_reset_time']) / 1000  # преобразуем в секунды
         date_object = datetime.fromtimestamp(timestamp_seconds, tz=pytz.utc)
         guild.guild_reset_time = date_object.replace(tzinfo=None)
@@ -85,7 +92,7 @@ class GuildData:
 
                 if guild_data_today:
                     # Обновляем старую запись гильдии
-                    print('guild_today')
+                    print('guild_old')
                     await self.__set_guild_attributes(guild_data_today, data)
                     await session.commit()
                 else:
@@ -93,12 +100,60 @@ class GuildData:
                     new_guild = await self.__set_guild_attributes(Guild(), data)
                     session.add(new_guild)
                     await session.commit()
+                    print('guild_new')
 
                     # Удаление записей старше месяца
-                month_old_date = datetime.now() - timedelta(days=30)
+                year_old_date = datetime.now() - timedelta(days=365)
                 (await session.execute(
-                    delete(Guild).where(Guild.last_db_update_time < month_old_date)
+                    delete(Guild).where(Guild.last_db_update_time < year_old_date)
                 ))
                 await session.commit()
         except Exception as e:
             raise DatabaseBuildError(f"An error occurred while building the Guild database: {e}") from e
+
+    @staticmethod
+    async def get_guild_galactic_power(period: str) -> io.BytesIO:
+        """Создает график роста ГМ гильдии за месяц или за год"""
+        new_day_start = get_new_day_start()
+        if period == 'month':
+            one_month_ago = new_day_start - relativedelta(months=1)  # Вычислить дату один месяц назад
+            async with async_session_maker() as session:
+                guild_data = await session.execute(
+                    select(Guild).filter(
+                        Guild.last_db_update_time >= one_month_ago))  # Использовать эту дату в фильтре
+                guild_data = guild_data.scalars().all()
+        else:
+            one_year_ago = new_day_start - relativedelta(months=12)
+            async with async_session_maker() as session:
+                guild_data = await session.execute(
+                    select(Guild).filter(
+                        Guild.last_db_update_time >= one_year_ago))
+                guild_data = guild_data.scalars().all()
+        # Создаем график с использованием plotly
+        x_values = [guild.last_db_update_time for guild in guild_data]
+        y_values = [guild.galactic_power for guild in guild_data]
+
+        fig = go.Figure(data=go.Scatter(
+            x=x_values,
+            y=y_values,
+            mode='lines+markers',
+            textposition='top center'))
+
+        fig.update_layout(
+            title=f'Raise galactic power per {period}',
+            xaxis_title='Update Time',
+            yaxis_title='Galactic Power',
+
+        )
+        # fig = go.Figure(data=go.Scatter(x=x_values, y=y_values))
+
+        # fig.update_yaxes(title="Galactic Power (GP)", tickformat=',')  # Изменить формат подписей оси Y
+
+        buf = io.BytesIO()
+        pio.write_image(fig, buf, format='png')
+        buf.seek(0)
+
+        return buf
+
+
+

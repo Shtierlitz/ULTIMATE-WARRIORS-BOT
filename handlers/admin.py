@@ -11,6 +11,8 @@ import json
 import os
 
 from db_models import Player
+from src.guild import GuildData
+from src.player import PlayerData
 from src.utils import split_list
 from settings import async_session_maker
 
@@ -19,7 +21,8 @@ COMMANDS = {
     "add_player": "Записать нового игрока в базу (через пробел 3 значения - имя код_союзника тг_id)",
     "players_list": "Вывести все записи по игрокам (не стоит использовать в общих чатах)",
     "delete_player": "Удалить игрока из базы по имени",
-    "grafic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц"
+    "grafic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц",
+    "refresh": "Экстреннее обновление базы данных"
     # Добавьте здесь другие команды по мере необходимости
 }
 
@@ -32,6 +35,20 @@ async def admin_command_help(message: types.Message):
             commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
             await bot.send_message(message.chat.id, f"Список доступных команд администратора:\n\n{commands}")
         except Exception as e:
+            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
+
+async def command_db_extra(message: types.Message):
+    """Стартуем бот и обновляем БД"""
+    is_guild_member = message.conf.get('is_guild_member', False)
+    if is_guild_member:
+        try:
+            await bot.send_message(message.chat.id,
+                                   "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
+            # await PlayerData().update_players_data()
+            await GuildData().build_db()
+        except Exception as e:
+            print(e)
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
@@ -90,7 +107,7 @@ async def players_list(message: types.Message):
                 for index, player in enumerate(data):
                     for ally_code, info in player.items():
                         msg = (
-                            f"{index+1}: {info['player_name']}\n"
+                            f"{index + 1}: {info['player_name']}\n"
                             f"Код союзника: {ally_code}\n"
                             f"ID: {info['tg_id']}\n"
                             f"TG_NIC: {info['tg_nic']}\n"
@@ -98,7 +115,7 @@ async def players_list(message: types.Message):
                         )
                         msg_list.append(msg)
                 msg_list.append(f"Всего: {len(data)}")
-                final_lst_1, final_lst_2 = split_list(msg_list, 2)     # hfpltkztv
+                final_lst_1, final_lst_2 = split_list(msg_list, 2)  # hfpltkztv
                 # Соединяем все сообщения в одну большую строку
                 final_msg_1 = ''.join(final_lst_1)
                 final_msg_2 = ''.join(final_lst_2)
@@ -169,7 +186,8 @@ async def send_month_player_grafic(message: types.Message):
 
             # Проверка, есть ли данные
             if not player_data:
-                await message.reply(f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
+                await message.reply(
+                    f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
                 return
 
             # Подготовка данных для построения графика
@@ -200,75 +218,39 @@ async def send_month_player_grafic(message: types.Message):
             buf = io.BytesIO()
             pio.write_image(fig, buf, format='png')
             buf.seek(0)
-
             await bot.send_photo(chat_id=message.chat.id, photo=buf)
         except Exception as e:
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
-async def send_month_total_grafic(message: types.Message):
-    """Отправляет график рейда для всех игроков"""
+
+async def send_month_guild_grafic(message: types.Message):
+    """Отправляет график рейда игрока"""
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
         try:
-            # Извлечение данных из базы данных
-            async with async_session_maker() as session:
-                all_players = session.query(Player).all()
-            players_data = {}
+            image = await GuildData.get_guild_galactic_power(period="month")
+            await bot.send_photo(chat_id=message.chat.id, photo=image)
+        except Exception as e:
+            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
-            for player in all_players:
-                if player.name not in players_data:
-                    players_data[player.name] = {'update_times': [], 'reid_points': []}
 
-                players_data[player.name]['update_times'].append(player.update_time)
-                players_data[player.name]['reid_points'].append(player.reid_points)
-
-            # Подготовка данных для построения графика
-            fig = go.Figure(layout=go.Layout(
-                autosize=False,
-                width=2000,  # Укажите ширину в пикселях
-                height=1200)  # Укажите высоту в пикселях
-            )
-
-            color_palette = px.colors.qualitative.Safe
-
-            for idx, (player_name, data) in enumerate(players_data.items()):
-                fig.add_trace(go.Scatter(
-                    x=data['update_times'],
-                    y=data['reid_points'],
-                    mode='lines+markers+text',
-                    text=data['reid_points'],
-                    textposition='top center',
-                    name=player_name,
-                    line=dict(color=color_palette[idx % len(color_palette)], width=2),  # Устанавливаем толщину линии
-                    marker=dict(size=10)  # Устанавливаем размер точки
-                ))
-
-            fig.update_layout(
-                title=f'Reid Points Over Month for All Players',
-                xaxis_title='Update Time',
-                yaxis_title='Reid Points',
-                yaxis=dict(
-                    range=[-100, 700],
-                    tickmode='linear',
-                    tick0=0,
-                    dtick=50
-                )
-            )
-
-            # Сохранение графика в виде файла изображения
-            buf = io.BytesIO()
-            pio.write_image(fig, buf, format='png')
-            buf.seek(0)
-
-            await bot.send_photo(chat_id=message.chat.id, photo=buf)
+async def send_year_guild_grafic(message: types.Message):
+    """Отправляет график рейда игрока"""
+    is_guild_member = message.conf.get('is_guild_member', False)
+    if is_guild_member:
+        try:
+            image = await GuildData.get_guild_galactic_power(period="year")
+            await bot.send_photo(chat_id=message.chat.id, photo=image)
         except Exception as e:
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 def register_handlers_admin(dp: Dispatcher):
+    dp.register_message_handler(command_db_extra, commands=['refresh'], is_chat_admin=True)
     dp.register_message_handler(add_player, commands=['add_player'], is_chat_admin=True)
     dp.register_message_handler(players_list, commands=['players_list'], is_chat_admin=True)
     dp.register_message_handler(delete_player, commands=['delete_player'], is_chat_admin=True)
     dp.register_message_handler(admin_command_help, commands=['admin'], is_chat_admin=True)
     dp.register_message_handler(send_month_player_grafic, commands=['grafic'], is_chat_admin=True)
-    dp.register_message_handler(send_month_total_grafic, commands=['grafic_all'], is_chat_admin=True)
+    dp.register_message_handler(send_month_guild_grafic, commands=['guild_month'], is_chat_admin=True)
+    dp.register_message_handler(send_year_guild_grafic, commands=['guild_year'], is_chat_admin=True)

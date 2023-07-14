@@ -19,8 +19,7 @@ from worker.tasks import send_message
 
 GROUP_CHAT_ID = os.environ.get("GROUP_ID")
 COMMANDS = {
-    "start": "Начать работу с ботом",
-    "help": "Получить информацию о доступных командах",
+    "start": "Получить информацию о доступных командах",
     "player": "Открыть панель кнопок где можно получить информацию по согильдийцу",
     "gac": "Получить полную статистику по регистрации на ВА с сылками на возможных соперников",
     "reid_list": "Показывает полный список кто сколько купонов сдал",
@@ -41,42 +40,18 @@ def handle_exception(future):
         print(f"Ошибка: {exception}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
-# async def command_start(message: types.Message):
-#     """Стартуем бот и обновляем БД"""
-#     await bot.send_message(message.chat.id, "Начинаем работу.\nОбновляем базу данных...\nПодождите...")
-#     loop = asyncio.get_event_loop()
-#     future = loop.run_in_executor(None, PlayerData().update_players_data)
-#     # future.add_done_callback(handle_exception)
-#     future2 = loop.run_in_executor(None, GuildData().build_db)
-#     # future2.add_done_callback(handle_exception)
-#     await bot.send_message(message.chat.id, "База данных обновляется в фоне.\nМожно приступать к работе.")
-
-async def command_start(message: types.Message):
-    """Стартуем бот и обновляем БД"""
-    is_guild_member = message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        try:
-            await bot.send_message(message.chat.id,
-                                   "Начинаем работу.\nОБаза данных обновляется в фоне.\nМожно приступать к работе.")
-            await PlayerData().update_players_data()
-            await GuildData().build_db()
-        except Exception as e:
-            print(e)
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
-
 # Ваши обработчики
-async def command_help(message: types.Message):
+async def command_start(message: types.Message):
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
         try:
+            await bot.send_message(message.chat.id, f"Начинаем работу.")
             commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
             await bot.send_message(message.chat.id, f"Список доступных команд:\n\n{commands}")
 
         except Exception as e:
             print(e)
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
 
 
 async def command_gac_statistic(message: types.Message):
@@ -145,7 +120,6 @@ async def get_raid_lazy(message: types.Message):
 
 def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
-    dp.register_message_handler(command_help, commands=['help'])
     dp.register_message_handler(get_user_data, commands=['player1'], state='*', run_task=True)
     dp.register_message_handler(command_gac_statistic, commands=['gac'], state='*')
     dp.register_message_handler(get_raid_points, commands=['reid_list'], state='*')

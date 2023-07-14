@@ -188,11 +188,6 @@ class PlayerData:
             f"{key}: {value}\n{'-' * 30}" for key, value in data_dict.items() if not key.startswith('_') and key not in ('id', 'tg_id'))
         return formatted_string
 
-    # @staticmethod
-    # def get_player_filtered_data(data: Player, key: str):
-    #     """Возвращает данные игрока по ключу"""
-    #     return data.__dict__[key]
-
 
 class PlayerScoreService:
     @staticmethod
