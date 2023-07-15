@@ -83,7 +83,7 @@ async def get_user_data(message: types.Message):
                     select(Player).filter_by(name=player_name).filter(
                         Player.update_time >= new_day_start))
                 player = query.scalars().first()
-            player_str_list = PlayerData().extract_data(player)
+            player_str_list = await PlayerData().extract_data(player)
             await bot.send_message(message.chat.id, player_str_list)
         except Exception as e:
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")

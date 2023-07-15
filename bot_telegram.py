@@ -17,7 +17,7 @@ load_dotenv()
 
 
 async def on_startup(_):  # функция настроек старта бота.
-    print("Бот вышел в онлайн")  # Выводит в консоль в файле bat
+    print("Бот вышел в онлайн")
     await settings.create_tables()
     scheduler = AsyncIOScheduler(timezone=os.environ.get("TIME_ZONE", "UTC"))
     scheduler.add_job(apsched.check_guild_points, 'cron', hour=int(os.environ.get("REMIND_GUILD_POINTS_HOUR", 14)),

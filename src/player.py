@@ -176,96 +176,9 @@ class PlayerData:
         print("\n".join(error_list))
         print("Данные игроков в базе обновлены.")
 
-    @staticmethod
-    async def get_player_gp_graphic(player_name, period):
-        new_day_start = get_new_day_start()
-        if period == "month":
-            one_month_ago = new_day_start - relativedelta(months=1)  # Вычислить дату один месяц назад
-            async with async_session_maker() as session:
-                player_data = await session.execute(
-                    select(Player).filter_by(name=player_name).filter(
-                        Player.update_time >= one_month_ago))  # Использовать эту дату в фильтре
-                player_data = player_data.scalars().all()
-        else:
-            one_year_ago = new_day_start - relativedelta(months=12)
-            async with async_session_maker() as session:
-                # Получаем все данные для игрока
-                stmt = select(Player).filter(Player.name == player_name, Player.update_time >= one_year_ago)
 
-                all_data = await session.execute(stmt)
-                all_data = all_data.scalars().all()
 
-                # Сортируем данные по дате обновления
-                all_data.sort(key=lambda x: x.update_time)
-
-                # Берем первую запись для каждого месяца
-                player_data = []
-                current_month = None
-                for record in all_data:
-                    if record.update_time.month != current_month:
-                        player_data.append(record)
-                        current_month = record.update_time.month
-
-        # Создаем график с использованием plotly
-        x_values = [player.update_time for player in player_data]
-        y_values = [player.galactic_power for player in player_data]
-
-        fig = go.Figure(data=go.Scatter(
-            x=x_values,
-            y=y_values,
-            mode='lines+markers',
-            textposition='top center',
-        ))
-
-        fig.update_layout(
-            title=f'Raise {player_name}\'s galactic power per {period}',
-            xaxis_title='Update Time',
-            yaxis_title='Galactic Power',
-        )
-
-        # Вычисляем разницу между самым поздним и самым ранним значением
-        difference_gp = y_values[-1] - y_values[0]
-
-        # Добавляем аннотацию с этой разницей
-        fig.add_annotation(
-            xref='paper', x=1, yref='paper', y=0,
-            text=f"Total difference: {difference_gp:,}",
-            showarrow=False,
-            font=dict(
-                size=14,
-                color="#ffffff"
-            ),
-            align="right",
-            bordercolor="#c7c7c7",
-            borderwidth=2,
-            borderpad=4,
-            bgcolor="#ff7f0e",
-            opacity=0.8
-        )
-
-        fig.add_annotation(
-            xref='paper', x=0, yref='paper', y=1,
-            text=f"Last value: {y_values[-1]:,}",
-            showarrow=False,
-            font=dict(
-                size=14,
-                color="#ffffff"
-            ),
-            align="right",
-            bordercolor="#c7c7c7",
-            borderwidth=2,
-            borderpad=4,
-            bgcolor="#666bff",
-            opacity=0.8
-        )
-
-        buf = io.BytesIO()
-        pio.write_image(fig, buf, format='png')
-        buf.seek(0)
-
-        return buf
-
-    def extract_data(self, player: Player):
+    async def extract_data(self, player: Player):
         """Выводит все данные по игроку в виде строки"""
         data_dict = player.__dict__
         formatted_string = "\n".join(

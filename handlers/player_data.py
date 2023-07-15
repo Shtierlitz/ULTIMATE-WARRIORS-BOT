@@ -5,6 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from middlewares.user_check import guild_members
+from src.graphics import get_player_gp_graphic
 from src.player import PlayerData
 from src.guild import GuildData
 from create_bot import bot
@@ -96,13 +97,13 @@ async def player_data_info(message: types.Message, state: FSMContext):
                     select(Player).filter_by(name=player_name)
                 )
                 player = query.scalars().first()
-            player_str_list = PlayerData().extract_data(player)
+            player_str_list = await PlayerData().extract_data(player)
             await bot.send_message(message.chat.id, player_str_list)
         elif key == "GP_month":
-            image = await PlayerData.get_player_gp_graphic(player_name, 'month')
+            image = await get_player_gp_graphic(player_name, 'month')
             await bot.send_photo(chat_id=message.chat.id, photo=image)
         elif key == "GP_year":
-            image = await PlayerData.get_player_gp_graphic(player_name, 'year')
+            image = await get_player_gp_graphic(player_name, 'year')
             await bot.send_photo(chat_id=message.chat.id, photo=image)
         elif key in player.__dict__:  # Проверяем, является ли ввод ключом в словаре атрибутов игрока
             player_data = player.__dict__[key]

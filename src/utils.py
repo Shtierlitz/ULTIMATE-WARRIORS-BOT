@@ -1,18 +1,17 @@
 # api_utils.py
-import io
-import os
-import requests
-# from create_bot import session
-from datetime import datetime, timedelta, time
 
+import json
+import os
+from typing import Tuple
+
+import requests
+from datetime import datetime, timedelta, time
 from aiogram import types
-from sqlalchemy import select, or_
+from sqlalchemy import select
 
 from create_bot import bot
 from db_models import Player
 from settings import async_session_maker
-from plotly import graph_objs as go
-from plotly import io as pio
 
 
 async def gac_statistic() -> tuple:
@@ -78,47 +77,98 @@ def get_new_day_start() -> datetime:
     return new_day_start
 
 
-async def get_month_player_graphic(message: types.Message, player_name: str) -> io.BytesIO or None:
-    # Извлечение данных из базы данных
-    async with async_session_maker() as session:
-        query = await session.execute(
-            select(Player).filter(or_(Player.name == player_name, Player.tg_nic == player_name))
-        )
-        player_data = query.scalars().all()
+async def get_players_list_from_ids(message: types.Message) -> Tuple[str, str]:
+    """Возвращает список содержимого в ids.json"""
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'api', 'ids.json')
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding='utf-8') as json_file:
+            data = json.load(json_file)
 
-    # Проверка, есть ли данные
-    if not player_data:
+        # Перебираем список игроков и формируем строку
+        msg_list = []
+        for index, player in enumerate(data):
+            for ally_code, info in player.items():
+                msg = (
+                    f"{index + 1}: {info['player_name']}\n"
+                    f"Код союзника: {ally_code}\n"
+                    f"ID: {info['tg_id']}\n"
+                    f"TG_NIC: {info['tg_nic']}\n"
+                    f"{'-' * 30}\n"
+                )
+                msg_list.append(msg)
+        msg_list.append(f"Всего: {len(data)}")
+        final_lst_1, final_lst_2 = split_list(msg_list, 2)  # hfpltkztv
+        # Соединяем все сообщения в одну большую строку
+        final_msg_1 = ''.join(final_lst_1)
+        final_msg_2 = ''.join(final_lst_2)
+
+        return final_msg_1, final_msg_2
+    else:
+        await bot.send_message(message.chat.id, "Файл ids.json не найден.")
+
+
+async def add_player_to_ids(message: types.Message) -> None:
+    """Добавляет запись о пользователе в ids.json"""
+    player_info = message.text.split(" ")
+    if len(player_info) != 5:
         await bot.send_message(message.chat.id,
-                               text=f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
+                               f"Неверный формат команды. Используйте: \n/add_player имя код_союзника тг_id тг_ник\n Все через один пробел.")
+        return
+    # имя игрока, код и ID телеграма и ник в телеграме
+    player_name, ally_code, tg_id, tg_nic = player_info[1], player_info[2], player_info[3], player_info[4]
+
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'api', 'ids.json')
+    if os.path.exists(file_path):
+        with open(file_path, "r") as json_file:
+            data = json.load(json_file)
+        if len(data) >= 50:
+            await bot.send_message(message.chat.id, f"Превышено число членов гильдии. Добавление невозможно!")
+        else:
+            # Добавление нового игрока в список
+            data.append({
+                ally_code: {
+                    "player_name": player_name,
+                    "tg_id": tg_id,
+                    "tg_nic": tg_nic
+                }
+            })
+
+            # Запись обновленного списка в файл
+            with open(file_path, "w") as json_file:
+                json.dump(data, json_file, ensure_ascii=False)
+
+            await bot.send_message(message.chat.id, f"Игрок {player_name} был добавлен в список.")
+    else:
+        await bot.send_message(message.chat.id, "Файл ids.json не найден.")
+
+
+async def delete_player_from_ids(message: types.Message):
+    player_name = message.get_args()  # Получаем имя игрока
+    if not player_name:
+        await message.reply("Пожалуйста, предоставьте имя игрока.")
         return
 
-    # Подготовка данных для построения графика
-    data = sorted([(player.update_time, int(player.reid_points)) for player in player_data])
-    update_times, reid_points = zip(*data)
+    file_path = os.path.join(os.path.dirname(__file__), '../api/ids.json')
 
-    # Построение графика
-    fig = go.Figure(data=go.Scatter(
-        x=update_times,
-        y=reid_points,
-        mode='lines+markers+text',
-        text=reid_points,
-        textposition='top center'))
+    with open(file_path, 'r', encoding='utf-8') as json_file:
+        data = json.load(json_file)
 
-    fig.update_layout(
-        title=f'Reid Points Over Month for {player_name}',
-        xaxis_title='Update Time',
-        yaxis_title='Reid Points',
-        yaxis=dict(
-            range=[-100, 700],
-            tickmode='linear',
-            tick0=0,
-            dtick=50
-        )
-    )
+    player_found = False  # флаг, чтобы отслеживать, найден ли игрок
 
-    # Сохранение графика в виде файла изображения
-    buf = io.BytesIO()
-    pio.write_image(fig, buf, format='png')
-    buf.seek(0)
+    for index, player in enumerate(data):
+        for ally_code, info in player.items():
+            if info["player_name"] == player_name:
+                del data[index]  # Удаляем запись игрока
+                player_found = True  # отмечаем, что игрок найден
+                break
 
-    return buf
+        if player_found:
+            break
+    else:
+        await message.reply("Игрок с таким именем не найден.")
+        return
+
+    with open(file_path, 'w', encoding='utf-8') as json_file:
+        json.dump(data, json_file, ensure_ascii=False, indent=2)
+
+    await bot.send_message(message.chat.id, f"Игрок {player_name} удален из списка.")
