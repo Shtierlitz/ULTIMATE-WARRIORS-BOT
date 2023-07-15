@@ -25,6 +25,7 @@ COMMANDS = {
     "reid_list": "Показывает полный список кто сколько купонов сдал",
     "reid_lazy": "Список тех кто еще не сдал 600",
     "reid_all": "Список сданной энки за все время",
+    "guildinfo": "Инфа о гильдии",
     "admin": "Список команд администраторов",
 
     # Добавьте здесь другие команды по мере необходимости
@@ -119,6 +120,16 @@ async def get_raid_lazy(message: types.Message):
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
+async def get_guild_info(message: types.Message):
+    is_guild_member = message.conf.get('is_guild_member', False)
+    if is_guild_member:
+        try:
+            guild_info = await GuildData.get_latest_guild_data()
+            info_text = "\n".join(guild_info)
+            await bot.send_message(message.chat.id, info_text)
+        except Exception as e:
+            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
 def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
     dp.register_message_handler(get_user_data, commands=['player1'], state='*', run_task=True)
@@ -126,3 +137,4 @@ def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(get_raid_points, commands=['reid_list'], state='*')
     dp.register_message_handler(get_raid_lazy, commands=['reid_lazy'], state='*')
     dp.register_message_handler(get_raid_points_all, commands=['reid_all'], state='*')
+    dp.register_message_handler(get_guild_info, commands=['guildinfo'])

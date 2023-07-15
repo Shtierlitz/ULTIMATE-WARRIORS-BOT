@@ -1,12 +1,12 @@
 # api_utils.py
-
+import asyncio
 import json
 import os
 import random
 from typing import Tuple
 
 import aiohttp
-import requests
+import pytz
 from datetime import datetime, timedelta, time
 from aiogram import types
 from sqlalchemy import select
@@ -14,6 +14,7 @@ from sqlalchemy import select
 from create_bot import bot
 from db_models import Player
 from settings import async_session_maker
+from aiogram.utils.exceptions import ChatNotFound
 
 
 async def gac_statistic() -> tuple:
@@ -215,3 +216,63 @@ async def format_scores(sorted_scores, filter_points, total=True):
     if total:
         reid_scores.append(f"Всего: {len(reid_scores)}")
     return reid_scores
+
+
+async def check_guild_players(message: types.Message):
+    is_guild_member = message.conf.get('is_guild_member', False)
+    if is_guild_member:
+        # try:
+        file_path = os.path.join(os.path.dirname(__file__), '../ids.json')
+        with open(file_path, 'r', encoding='utf-8') as file:
+            players = json.load(file)
+
+        for player in players:
+            player_info = list(player.values())[0]
+            print(player_info)
+            player_tg_id = player_info['tg_id']
+            player_tg_nic = player_info['tg_nic']
+            player_name = player_info['player_name']
+            try:
+                if player_tg_id is None or player_tg_id == 'null' or len(player_tg_id) < 2:
+                    await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                                           f"Игрок: {player_name}, не зарегистрировал свой ТГ ID")
+                    await asyncio.sleep(3)
+                elif player_tg_nic is None or player_tg_nic == 'null' or len(player_tg_nic) < 2:
+                    await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                                           f"У игрока: {player_name}, не создан или не добавлен ТГ ник")
+                    await asyncio.sleep(3)
+                else:
+                    await bot.send_message(player_tg_id, f"Проверка. Не обращай внимания. Проводится тестирование.")
+                    await asyncio.sleep(3)
+            except ChatNotFound:
+                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                                       f"Игрок: {player_name} @{player_tg_nic}, не нажал СТАРТ или был введен неправильны ID")
+                await asyncio.sleep(3)
+        await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                               f"Проверка завершена.")
+
+    # except Exception as e:
+    #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
+
+def get_localized_datetime(timestamp_millis: int, timezone_str: str = None) -> datetime:
+    """Преобразует timestamp из миллисекунд в datetime с учетом временной зоны"""
+
+    timestamp_seconds = timestamp_millis / 1000  # преобразуем в секунды
+    date_object = datetime.utcfromtimestamp(timestamp_seconds)
+
+    # Если временная зона не указана, возвращаем время в UTC
+    if timezone_str is None:
+        return date_object
+
+    # Создаём объект временной зоны
+    time_z = pytz.timezone(timezone_str)
+
+    # Получаем текущее смещение от UTC в часах
+    utc_offset_hours = time_z.utcoffset(date_object).total_seconds() / 3600
+
+    # Добавляем это смещение к нашему времени
+    date_object = date_object + timedelta(hours=utc_offset_hours)
+
+    return date_object
+

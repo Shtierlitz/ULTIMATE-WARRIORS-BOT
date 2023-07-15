@@ -21,10 +21,9 @@ class GuildMembershipMiddleware(BaseMiddleware):
         message.conf['is_guild_member'] = is_guild_member
 
         # проверяем, является ли сообщение командой и не является ли отправитель членом гильдии
-        if message.text.startswith('/') and not is_guild_member:
+        if message.text and message.text.startswith('/') and not is_guild_member:
             await message.answer(
                 "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
             return False
-
 
 

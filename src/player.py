@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 from local_settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
-from src.utils import get_new_day_start, format_scores
+from src.utils import get_new_day_start, format_scores, get_localized_datetime
 from sqlalchemy import select, delete, func, text
 
 load_dotenv()
@@ -84,7 +84,7 @@ class PlayerData:
             await session.execute(delete(Player).where(Player.update_time < month_old_date))
             await session.commit()
 
-    async def __set_player_attributes(self, player, data):
+    async def __set_player_attributes(self, player: Player, data):
         """Устанавливает значения из переданного словаря в модель Player"""
         player.name = data['name']
         player.ally_code = data['ally_code']
@@ -93,9 +93,7 @@ class PlayerData:
         player.update_time = datetime.now()
         player.reid_points = data['reid_points']
 
-        timestamp_seconds = int(data['lastActivityTime']) / 1000  # преобразуем в секунды
-        date_object = datetime.utcfromtimestamp(timestamp_seconds)
-        player.lastActivityTime = date_object
+        player.lastActivityTime = get_localized_datetime(int(data['lastActivityTime']), str(os.environ.get('TIME_ZONE')))
 
         player.level = data['level']
         player.player_id = data['playerId']

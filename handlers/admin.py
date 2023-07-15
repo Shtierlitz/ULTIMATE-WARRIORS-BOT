@@ -10,7 +10,7 @@ from src.graphics import get_month_player_graphic, get_guild_galactic_power
 from src.guild import GuildData
 from src.player import PlayerData
 from src.utils import split_list, get_players_list_from_ids, add_player_to_ids, \
-    delete_player_from_ids
+    delete_player_from_ids, check_guild_players
 
 COMMANDS = {
     "admin": "Получить информацию о доступных командах администратора",
@@ -20,7 +20,8 @@ COMMANDS = {
     "graphic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц",
     "guild_month": "Выводит график росто ГМ гильдии за месяц",
     "guild_year": "Выводит график роста ГМ гильдии за год",
-    "refresh": "Экстреннее обновление базы данных"
+    "refresh": "Экстреннее обновление базы данных",
+    "check": "Проверка всех пользователей на доступность для бота",
     # Добавьте здесь другие команды по мере необходимости
 }
 
@@ -43,7 +44,7 @@ async def command_db_extra(message: types.Message):
         try:
             await bot.send_message(message.chat.id,
                                    "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
-            await PlayerData().update_players_data()
+            # await PlayerData().update_players_data()
             await GuildData().build_db()
         except Exception as e:
             print(e)
@@ -122,6 +123,16 @@ async def send_year_guild_grafic(message: types.Message):
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
+
+
+
+async def check_ids(message: types.Message):
+    is_guild_member = message.conf.get('is_guild_member', False)
+    if is_guild_member:
+        # try:
+            await check_guild_players(message)
+        # except Exception as e:
+        #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(command_db_extra, commands=['refresh'], is_chat_admin=True)
     dp.register_message_handler(add_player, commands=['add_player'], is_chat_admin=True)
@@ -131,3 +142,4 @@ def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(send_month_player_graphic, commands=['graphic'], is_chat_admin=True)
     dp.register_message_handler(send_month_guild_grafic, commands=['guild_month'], is_chat_admin=True)
     dp.register_message_handler(send_year_guild_grafic, commands=['guild_year'], is_chat_admin=True)
+    dp.register_message_handler(check_ids, commands=['check'], is_chat_admin=True)

@@ -1,25 +1,23 @@
 # src/guild.py
-import io
+
 import os
 
 import aiohttp
 import pytz
 import requests
-from sqlalchemy import func, delete, select
+from sqlalchemy import delete, select
 
-# from create_bot import session
+
 from settings import async_session_maker
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 
-from db_models import Player, Guild
+from db_models import Guild
 from pytz import timezone
 from dotenv import load_dotenv
-from dateutil.relativedelta import relativedelta
-from src.errors import Status404Error, DatabaseBuildError
-from src.utils import get_new_day_start
 
-import plotly.graph_objects as go
-import plotly.io as pio
+from src.errors import Status404Error, DatabaseBuildError
+from src.utils import get_new_day_start, get_localized_datetime
+
 
 load_dotenv()
 
@@ -73,9 +71,7 @@ class GuildData:
         now = datetime.now(pytz.UTC).astimezone(time_tz).replace(tzinfo=None)
         guild.last_db_update_time = now
 
-        timestamp_seconds = int(data['guild_reset_time']) / 1000  # преобразуем в секунды
-        date_object = datetime.fromtimestamp(timestamp_seconds, tz=pytz.utc)
-        guild.guild_reset_time = date_object.replace(tzinfo=None)
+        guild.guild_reset_time = get_localized_datetime(int(data['guild_reset_time']), str(os.environ.get('TIME_ZONE')))
 
         return guild
 
@@ -110,3 +106,22 @@ class GuildData:
                 await session.commit()
         except Exception as e:
             raise DatabaseBuildError(f"An error occurred while building the Guild database: {e}") from e
+
+    @staticmethod
+    async def get_latest_guild_data():
+        new_day_start = get_new_day_start()
+        async with async_session_maker() as session:
+            async with session.begin():
+                guild_data_today = (await session.execute(
+                    select(Guild).where(Guild.last_db_update_time >= new_day_start)
+                )).scalar_one_or_none()
+        return [
+            f"Name: {guild_data_today.name}",
+            f"Guild ID: {guild_data_today.guild_id}",
+            f"Credo: {guild_data_today.credo}",
+            f"Galactic Power: {guild_data_today.galactic_power}",
+            f"Required Level: {guild_data_today.required_level}",
+            f"Total Members: {guild_data_today.total_members}",
+            f"Guild Reset Time: {guild_data_today.guild_reset_time}",
+            f"Last DB Update Time: {guild_data_today.last_db_update_time}"
+        ]
