@@ -4,6 +4,7 @@ import json
 import os
 from collections import defaultdict
 
+import aiohttp
 import pytz
 import requests
 from dateutil.relativedelta import relativedelta
@@ -17,7 +18,7 @@ from dotenv import load_dotenv
 
 from local_settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
-from src.utils import get_new_day_start
+from src.utils import get_new_day_start, format_scores
 from sqlalchemy import select, delete, func, text
 
 load_dotenv()
@@ -39,13 +40,14 @@ GUILD_POST_DATA = {
 
 class PlayerData:
     @staticmethod
-    def get_swgoh_player_data(ally_code):
-        player_request = requests.get(f'http://api.swgoh.gg/player/{str(ally_code)}/')
-        if player_request.status_code == 200:
-            data = player_request.json()
-            return data['data']
+    async def get_swgoh_player_data(ally_code):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f'http://api.swgoh.gg/player/{str(ally_code)}/') as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data['data']
 
-    def __add_ids(self):
+    async def __add_ids(self):
         try:
             with open("./api/ids.json", encoding="utf-8") as f:
                 data = json.load(f)  # Загрузить список словарей
@@ -131,21 +133,25 @@ class PlayerData:
         """Вытаскивает данные о гильдии и участниках, а после
          по имени участника гоняет циклом обновление бд для каждого участника"""
         # try:
-        swgoh_request = requests.get(f"http://api.swgoh.gg/guild-profile/{os.environ.get('GUILD_ID')}")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://api.swgoh.gg/guild-profile/{os.environ.get('GUILD_ID')}") as swgoh_request:
+                swgoh_request.raise_for_status()
+                data = await swgoh_request.json()
+
         error_list = []
-        swgoh_request.raise_for_status()
-        data = swgoh_request.json()
-        existing_players = self.__add_ids()
+        existing_players = await self.__add_ids()
 
         # try:
-        comlink_request = requests.post(f"{API_LINK}/guild", json=GUILD_POST_DATA)
-        comlink_request.raise_for_status()
-        raw_data = comlink_request.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f"{API_LINK}/guild", json=GUILD_POST_DATA) as comlink_request:
+                comlink_request.raise_for_status()
+                raw_data = await comlink_request.json()
+
         guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
 
         for i in data['data']['members']:
             if str(i['ally_code']) in existing_players:
-                final_data: dict = self.get_swgoh_player_data(i['ally_code'])
+                final_data: dict = await self.get_swgoh_player_data(i['ally_code'])
                 final_data.update({'guild_join_time': i['guild_join_time']})
                 final_data.update({'existing_player': existing_players[str(i['ally_code'])]})
                 # try:
@@ -175,8 +181,6 @@ class PlayerData:
 
         print("\n".join(error_list))
         print("Данные игроков в базе обновлены.")
-
-
 
     async def extract_data(self, player: Player):
         """Выводит все данные по игроку в виде строки"""
@@ -231,7 +235,7 @@ class PlayerScoreService:
         if not recent_players:
             return "Нет данных об игроках."
         sorted_scores, _ = PlayerScoreService.get_sorted_scores(recent_players)
-        scores = PlayerScoreService.format_scores(sorted_scores, filter_points=None)
+        scores = await format_scores(sorted_scores, filter_points=None)
         scores.insert(0,
                       f"\nСписок купонов за день\nОбновление дня в"
                       f" {os.environ.get('DAY_UPDATE_HOUR')}:{os.environ.get('DAY_UPDATE_MINUTES')}"
@@ -249,7 +253,7 @@ class PlayerScoreService:
             player: Player = query.scalar_one()
 
         sorted_scores, total_points = PlayerScoreService.get_sorted_scores(all_players)
-        scores = PlayerScoreService.format_scores(sorted_scores, filter_points=None, total=False)
+        scores = await format_scores(sorted_scores, filter_points=None, total=False)
         scores.append(f"Всего купонов от {player.update_time.strftime('%d.%m')}: {total_points}")
         scores.insert(0, f"\nСписок всех купонов за месяц:\n")
         return f"\n{'-' * 30}\n".join(scores)
@@ -260,7 +264,7 @@ class PlayerScoreService:
         if not recent_players:
             return "Нет данных об игроках."
         sorted_scores, _ = PlayerScoreService.get_sorted_scores(recent_players)
-        scores = PlayerScoreService.format_scores(sorted_scores, filter_points=600)
+        scores = await format_scores(sorted_scores, filter_points=600)
         # получение текущей временной зоны
         tz_name = os.environ.get('TIME_ZONE')
         t_zone = pytz.timezone(tz_name)
@@ -273,18 +277,3 @@ class PlayerScoreService:
 
         scores.insert(0, f"\nСписок не сдавших 600 энки на {local_time_str} по {os.environ.get('TZ_SUFFIX')}\n")
         return f"\n{'-' * 30}\n".join(scores)
-
-    @staticmethod
-    def format_scores(sorted_scores, filter_points, total=True):
-        # форматируем результат в нужный вид и сортируем по убыванию очков
-        filtered_scores = [
-            player for player in sorted_scores
-            if filter_points is None or player[1] < filter_points
-        ]
-        reid_scores = [
-            f"{i + 1}. {player[0]} {player[1]} купонов"
-            for i, player in enumerate(filtered_scores)
-        ]
-        if total:
-            reid_scores.append(f"Всего: {len(reid_scores)}")
-        return reid_scores

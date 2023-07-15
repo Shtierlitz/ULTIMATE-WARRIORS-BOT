@@ -194,3 +194,18 @@ async def send_photo_message(tg_id: str or int, caption_text: str):
             await bot.send_animation(tg_id, photo, caption=caption_text)
         else:
             await bot.send_photo(tg_id, photo, caption=caption_text)
+
+
+async def format_scores(sorted_scores, filter_points, total=True):
+    # форматируем результат в нужный вид и сортируем по убыванию очков
+    filtered_scores = [
+        player for player in sorted_scores
+        if filter_points is None or player[1] < filter_points
+    ]
+    reid_scores = [
+        f"{i + 1}. {player[0]} {player[1]} купонов"
+        for i, player in enumerate(filtered_scores)
+    ]
+    if total:
+        reid_scores.append(f"Всего: {len(reid_scores)}")
+    return reid_scores

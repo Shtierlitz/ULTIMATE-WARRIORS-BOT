@@ -2,6 +2,7 @@
 import io
 import os
 
+import aiohttp
 import pytz
 import requests
 from sqlalchemy import func, delete, select
@@ -40,13 +41,14 @@ GUILD_POST_DATA = {
 class GuildData:
 
 
-    def get_guild_data(self) -> dict:
+    async def get_guild_data(self) -> dict:
         """Собирает и возвращает данные про гильдию (только полезные)"""
         result = {}
         try:
-            comlink_request = requests.post(f"{API_LINK}/guild", json=GUILD_POST_DATA)
-            comlink_request.raise_for_status()
-            data = comlink_request.json()
+            async with aiohttp.ClientSession() as session:
+                async with session.post(f"{API_LINK}/guild", json=GUILD_POST_DATA) as comlink_request:
+                    comlink_request.raise_for_status()
+                    data = await comlink_request.json()
 
             result['name'] = data['guild']['profile']['name']
             result['guild_id'] = data['guild']['profile']['id']
@@ -82,7 +84,7 @@ class GuildData:
     async def build_db(self):
         """Строит базу данных и собранных данных"""
         try:
-            data = self.get_guild_data()
+            data = await self.get_guild_data()
             new_day_start = get_new_day_start()
             async with async_session_maker() as session:
                 async with session.begin():
