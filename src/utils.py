@@ -2,6 +2,7 @@
 
 import json
 import os
+import random
 from typing import Tuple
 
 import requests
@@ -172,3 +173,24 @@ async def delete_player_from_ids(message: types.Message):
         json.dump(data, json_file, ensure_ascii=False, indent=2)
 
     await bot.send_message(message.chat.id, f"Игрок {player_name} удален из списка.")
+
+
+async def send_photo_message(tg_id: str or int, caption_text: str):
+    # указываем путь к вашей папке
+    media_folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'media')
+
+    # получаем список всех файлов в каталоге
+    files = os.listdir(media_folder)
+
+    # выбираем случайный файл
+    random_file = random.choice(files)
+
+    # формируем полный путь до файла
+    photo_path = os.path.join(media_folder, random_file)
+
+    with open(photo_path, 'rb') as photo:
+        # проверяем расширение файла
+        if random_file.lower().endswith('.gif'):
+            await bot.send_animation(tg_id, photo, caption=caption_text)
+        else:
+            await bot.send_photo(tg_id, photo, caption=caption_text)
