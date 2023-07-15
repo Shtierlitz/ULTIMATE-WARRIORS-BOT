@@ -7,7 +7,7 @@ from aiogram.dispatcher.middlewares import BaseMiddleware
 
 
 # Загрузите ids.json в память
-with open("./api/ids.json") as f:
+with open("./ids.json") as f:
     guild_members = json.load(f)
 
 

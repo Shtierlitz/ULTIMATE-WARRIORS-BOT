@@ -5,6 +5,7 @@ import os
 import random
 from typing import Tuple
 
+import aiohttp
 import requests
 from datetime import datetime, timedelta, time
 from aiogram import types
@@ -28,28 +29,33 @@ async def gac_statistic() -> tuple:
     count_false = 0
     link_pre = 'https://swgoh.gg/p/'
     for i in players_list:
-        request = requests.get(f"http://api.swgoh.gg/player/{i.ally_code}/gac-bracket/")
+        # request = requests.get(f"http://api.swgoh.gg/player/{i.ally_code}/gac-bracket/")
+        #
+        # if request.status_code == 200:
+        #     data = request.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://api.swgoh.gg/player/{i.ally_code}/gac-bracket/") as request:
+                if request.status == 200:
+                    request.raise_for_status()
+                    data = await request.json()
 
-        if request.status_code == 200:
-            data = request.json()
+                    message = f"{i.name} зареган. Противники: \n"
+                    bracket_players = data['data']['bracket_players']
+                    temp_list = []
 
-            message = f"{i.name} зареган. Противники: \n"
-            bracket_players = data['data']['bracket_players']
-            temp_list = []
+                    for j in bracket_players:
+                        if j['player_name'] == i.name:
+                            pass
+                        else:
+                            st = f"[{j['player_name']}]({link_pre}{j['ally_code']})"
+                            temp_list.append(st)
 
-            for j in bracket_players:
-                if j['player_name'] == i.name:
-                    pass
+                    message += ", ".join(temp_list)
+                    result.append(message)
+                    count_true += 1
                 else:
-                    st = f"[{j['player_name']}]({link_pre}{j['ally_code']})"
-                    temp_list.append(st)
-
-            message += ", ".join(temp_list)
-            result.append(message)
-            count_true += 1
-        else:
-            result.append(f'{i.name} не зареган')
-            count_false += 1
+                    result.append(f'{i.name} не зареган')
+                    count_false += 1
 
     result.append(f"Зареганных всего: {count_true}")
     result.append(f"Завтыкали: {count_false}")
@@ -80,7 +86,7 @@ def get_new_day_start() -> datetime:
 
 async def get_players_list_from_ids(message: types.Message) -> Tuple[str, str]:
     """Возвращает список содержимого в ids.json"""
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'api', 'ids.json')
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')
     if os.path.exists(file_path):
         with open(file_path, "r", encoding='utf-8') as json_file:
             data = json.load(json_file)
@@ -118,7 +124,7 @@ async def add_player_to_ids(message: types.Message) -> None:
     # имя игрока, код и ID телеграма и ник в телеграме
     player_name, ally_code, tg_id, tg_nic = player_info[1], player_info[2], player_info[3], player_info[4]
 
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'api', 'ids.json')
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')
     if os.path.exists(file_path):
         with open(file_path, "r") as json_file:
             data = json.load(json_file)
@@ -149,7 +155,7 @@ async def delete_player_from_ids(message: types.Message):
         await message.reply("Пожалуйста, предоставьте имя игрока.")
         return
 
-    file_path = os.path.join(os.path.dirname(__file__), '../api/ids.json')
+    file_path = os.path.join(os.path.dirname(__file__), '../ids.json')
 
     with open(file_path, 'r', encoding='utf-8') as json_file:
         data = json.load(json_file)

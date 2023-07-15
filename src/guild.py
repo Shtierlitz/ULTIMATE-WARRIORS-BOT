@@ -39,8 +39,6 @@ GUILD_POST_DATA = {
 
 
 class GuildData:
-
-
     async def get_guild_data(self) -> dict:
         """Собирает и возвращает данные про гильдию (только полезные)"""
         result = {}
@@ -112,9 +110,3 @@ class GuildData:
                 await session.commit()
         except Exception as e:
             raise DatabaseBuildError(f"An error occurred while building the Guild database: {e}") from e
-
-
-
-
-
-

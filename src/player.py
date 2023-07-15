@@ -49,7 +49,7 @@ class PlayerData:
 
     async def __add_ids(self):
         try:
-            with open("./api/ids.json", encoding="utf-8") as f:
+            with open("./ids.json", encoding="utf-8") as f:
                 data = json.load(f)  # Загрузить список словарей
 
             result = {}  # Создать пустой словарь
