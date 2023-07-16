@@ -49,7 +49,9 @@ async def player_info_buttons(message: types.Message, state: FSMContext):
     if is_guild_member:
         if message.text == 'cencel':
             return await cancel_handler(message, state)
-        player_name = message.text  # Удалить символ '/' перед именем игрока
+        player_name = message.text
+        if player_name.startswith("@"):
+            player_name = player_name.replace("@", "")
         if player_name == 'back':
             await back_handler(message, state)
         else:
@@ -57,10 +59,18 @@ async def player_info_buttons(message: types.Message, state: FSMContext):
 
             new_day_start = get_new_day_start()  # начало нового дня
             async with async_session_maker() as session:
+                # Первый запрос: попытка найти по Player.name
                 query = await session.execute(
                     select(Player).filter(Player.update_time >= new_day_start, Player.name == player_name)
                 )
                 player = query.scalars().first()
+
+                # Если игрок не найден по имени, попытка найти по tg_nic
+                if not player:
+                    query = await session.execute(
+                        select(Player).filter(Player.update_time >= new_day_start, Player.tg_nic == player_name)
+                    )
+                    player = query.scalars().first()
 
             if not player:  # Если игрока с таким именем нет в базе данных
                 await state.reset_state()
