@@ -167,12 +167,18 @@ class PlayerData:
                 final_data.update({'level': comlink_data['level']})
                 final_data.update({'playerId': comlink_data['playerId']})
                 final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
-                member_contribution_dict = {item['type']: item['currentValue'] for item in
-                                            guild_data_dict[comlink_data['name']]['memberContribution']}
-                final_data.update({'reid_points': member_contribution_dict[2]})
-                final_data.update({'guild_points': member_contribution_dict[1]})
-                final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
+                try:
+                    member_contribution_dict = {item['type']: item['currentValue'] for item in
+                                                guild_data_dict[comlink_data['name']]['memberContribution']}
+                    final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
 
+                    final_data.update({'reid_points': member_contribution_dict[2]})
+                    final_data.update({'guild_points': member_contribution_dict[1]})
+                except KeyError:
+                    message = f"Игрок {i['player_name']} удален из гильдии. Обновите ids.json. Сотрите малейшие воспоминания об этом непотребстве!"
+                    error_list.append(message)
+                    await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message)
+                    continue
                 await self.create_or_update_player_data(final_data)
 
             else:

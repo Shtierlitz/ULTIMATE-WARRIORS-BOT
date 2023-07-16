@@ -29,8 +29,6 @@ async_session_maker = sessionmaker(engine, expire_on_commit=False, class_=AsyncS
 logger = logging.getLogger('my_logger')
 logger.setLevel(logging.DEBUG)  # или любой уровень, который вы хотите
 
-with open('my_log_file.log', 'a') as f:
-    f.write(f'\n{"-"*60}\n'*5)
 
 # Создаем обработчик файлов с mode='w', чтобы файл был перезаписан при каждом запуске
 file_handler = logging.FileHandler('my_log_file.log', mode='a')

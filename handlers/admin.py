@@ -42,14 +42,14 @@ async def command_db_extra(message: types.Message):
     """Стартуем бот и обновляем БД"""
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
-        try:
+        # try:
             await bot.send_message(message.chat.id,
                                    "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
             await PlayerData().update_players_data()
             await GuildData().build_db()
-        except Exception as e:
-            print(e)
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+        # except Exception as e:
+        #     print(e)
+        #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def add_player(message: types.Message):
