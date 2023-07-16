@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from db_models import Player
-from worker.tasks import send_message
+
 
 GROUP_CHAT_ID = os.environ.get("GROUP_ID")
 COMMANDS = {

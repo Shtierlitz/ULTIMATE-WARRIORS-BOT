@@ -1,10 +1,10 @@
 # apsched.py
+
 import asyncio
 import os
 
 from create_bot import bot
-# from create_bot import session
-from handlers.member import handle_exception
+
 from settings import async_session_maker
 from src.guild import GuildData
 from src.utils import get_new_day_start, send_photo_message
@@ -47,7 +47,6 @@ async def check_guild_points(*args, **kwargs):
         ]
         env_members = os.environ.get("ENG_MEMBERS")
         eng_members_list = list(map(int, env_members.split(",")))
-        print(eng_members_list)
         new_day_start = get_new_day_start()
 
         async with async_session_maker() as session:
@@ -102,5 +101,3 @@ async def update_db(*args, **kwargs):
     await GuildData().build_db()
 
 
-async def send_message_interval(*args, **kwargs):
-    await bot.send_message(562272797, "С интервалом 1 min")

@@ -1,0 +1,15 @@
+venv
+*/local_settings.py
+*.sqlite3
+guild.db
+node_modules
+*.log
+*.tmp
+npm-debug.log
+.git
+.idea
+.vscode
+fake_db.py
+
+temp.txt
+local_settings.py

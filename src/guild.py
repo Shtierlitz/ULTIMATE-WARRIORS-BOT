@@ -1,5 +1,5 @@
 # src/guild.py
-
+import logging
 import os
 
 import aiohttp
@@ -7,7 +7,7 @@ import pytz
 import requests
 from sqlalchemy import delete, select
 
-
+from settings import logger
 from settings import async_session_maker
 from datetime import datetime, timedelta
 
@@ -115,6 +115,8 @@ class GuildData:
                 guild_data_today = (await session.execute(
                     select(Guild).where(Guild.last_db_update_time >= new_day_start)
                 )).scalar_one_or_none()
+        datetime_object = guild_data_today.guild_reset_time
+        time_string = datetime_object.strftime("%H:%M")
         return [
             f"Name: {guild_data_today.name}",
             f"Guild ID: {guild_data_today.guild_id}",
@@ -122,6 +124,7 @@ class GuildData:
             f"Galactic Power: {guild_data_today.galactic_power}",
             f"Required Level: {guild_data_today.required_level}",
             f"Total Members: {guild_data_today.total_members}",
-            f"Guild Reset Time: {guild_data_today.guild_reset_time}",
+            f"Guild Reset Time: {time_string}",
+            f"Time zone: {os.environ.get('TIME_ZONE')}",
             f"Last DB Update Time: {guild_data_today.last_db_update_time}"
         ]

@@ -12,11 +12,13 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta, time
 import plotly.graph_objects as go
 import plotly.io as pio
+
+from create_bot import bot
 from db_models import Player, Guild
 from pytz import timezone
 from dotenv import load_dotenv
 
-from local_settings import async_session_maker
+from settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
 from src.utils import get_new_day_start, format_scores, get_localized_datetime
 from sqlalchemy import select, delete, func, text
@@ -146,7 +148,6 @@ class PlayerData:
                 raw_data = await comlink_request.json()
 
         guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
-
         for i in data['data']['members']:
             if str(i['ally_code']) in existing_players:
                 final_data: dict = await self.get_swgoh_player_data(i['ally_code'])
@@ -175,7 +176,9 @@ class PlayerData:
                 await self.create_or_update_player_data(final_data)
 
             else:
-                error_list.append(f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json")
+                message = f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json и дождитесь обновления swgoh.gg"
+                error_list.append(message)
+
 
         print("\n".join(error_list))
         print("Данные игроков в базе обновлены.")
