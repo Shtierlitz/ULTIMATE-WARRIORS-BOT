@@ -1,4 +1,6 @@
 # src/graphics.py
+import json
+import os
 
 from create_bot import bot
 from db_models import Player, Guild
@@ -44,7 +46,6 @@ async def get_player_gp_graphic(player_name, period):
                     player_data.append(record)
                     current_month = record.update_time.month
 
-
     # Создаем график с использованием plotly
     x_values = [player.update_time.strftime("%d-%m-%Y") for player in player_data]
     y_values = [player.galactic_power for player in player_data]
@@ -58,8 +59,6 @@ async def get_player_gp_graphic(player_name, period):
 
     # Разделяем отсортированный список кортежей обратно на два списка
     x_values, y_values = zip(*data)
-
-
 
     fig = go.Figure(data=go.Scatter(
         x=x_values,
@@ -119,17 +118,33 @@ async def get_player_gp_graphic(player_name, period):
 
 async def get_month_player_graphic(message: types.Message, player_name: str) -> io.BytesIO or None:
     """Создает график рейдов игрока"""
+
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding='utf-8') as json_file:
+            data = json.load(json_file)
+    # Ищем player_name в data и берем связанный с ним player_code, если находим
+    ally_code = None
+    for dictionary in data:
+        for target_ally_code, player_info in dictionary.items():
+            if player_info.get('tg_nic') == player_name or player_info.get('player_name') == player_name:
+                ally_code = target_ally_code
+                break
     # Извлечение данных из базы данных
-    async with async_session_maker() as session:
-        query = await session.execute(
-            select(Player).filter(or_(Player.name == player_name, Player.tg_nic == player_name))
-        )
-        player_data = query.scalars().all()
+
+    if ally_code:
+        async with async_session_maker() as session:
+            # Если нашли player_code в data, используем его для поиска в базе данных
+            query = await session.execute(
+                select(Player).filter(Player.ally_code == int(ally_code))
+            )
+            # Иначе ищем по имени игрока, как раньше
+            player_data = query.scalars().all()
+    else:
+        player_data = None
 
     # Проверка, есть ли данные
     if not player_data:
-        await bot.send_message(message.chat.id,
-                               text=f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
         return
 
     # Подготовка данных для построения графика
@@ -194,7 +209,6 @@ async def get_guild_galactic_power(period: str) -> io.BytesIO:
                     guild_data.append(record)
                     current_month = record.last_db_update_time.month
 
-
     # Создаем график с использованием plotly
     x_values = [guild.last_db_update_time.strftime("%d-%m-%Y") for guild in guild_data]
     y_values = [guild.galactic_power for guild in guild_data]
@@ -256,7 +270,6 @@ async def get_guild_galactic_power(period: str) -> io.BytesIO:
         bgcolor="#666bff",
         opacity=0.8
     )
-
 
     buf = io.BytesIO()
     pio.write_image(fig, buf, format='png')

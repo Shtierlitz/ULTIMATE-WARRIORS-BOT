@@ -14,6 +14,7 @@ from src.utils import split_list, get_players_list_from_ids, add_player_to_ids, 
 
 COMMANDS = {
     "admin": "Получить информацию о доступных командах администратора",
+    "group": "Сиквенция отправки групового сообщения",
     "add_player": "Записать нового игрока в базу (через пробел 3 значения - имя код_союзника тг_id)",
     "players_list": "Вывести все записи по игрокам (не стоит использовать в общих чатах)",
     "delete_player": "Удалить игрока из базы по имени",
@@ -44,7 +45,7 @@ async def command_db_extra(message: types.Message):
         try:
             await bot.send_message(message.chat.id,
                                    "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
-            # await PlayerData().update_players_data()
+            await PlayerData().update_players_data()
             await GuildData().build_db()
         except Exception as e:
             print(e)
@@ -96,7 +97,11 @@ async def send_month_player_graphic(message: types.Message):
             if "@" in player_name:
                 player_name = player_name.replace("@", "")
             buf: io.BytesIO = await get_month_player_graphic(message, player_name)
-            await bot.send_photo(chat_id=message.chat.id, photo=buf)
+            if buf:
+                await bot.send_photo(chat_id=message.chat.id, photo=buf)
+            else:
+                await bot.send_message(message.chat.id,
+                                       text=f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
         except Exception as e:
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
