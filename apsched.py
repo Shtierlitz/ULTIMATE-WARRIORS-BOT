@@ -69,7 +69,8 @@ async def check_guild_points(*args, **kwargs):
                         try:
                             await send_photo_message(player.tg_id,
                                                      f"{player.name}, {rn.choice(message_list_eng)} {player.reid_points} points.")
-                            await asyncio.sleep(1)
+                            print(f"{player.name} энка")
+                            await asyncio.sleep(5)
                         except ChatNotFound as e:
                             await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                                    f"У {player.name} не подключена телега к чату.")
@@ -78,7 +79,8 @@ async def check_guild_points(*args, **kwargs):
                         try:
                             await send_photo_message(player.tg_id,
                                                      f"{player.name}, {rn.choice(message_list_ru)} {player.reid_points} купонов.")
-                            await asyncio.sleep(1)
+                            print(f"{player.name} энка")
+                            await asyncio.sleep(5)
                         except ChatNotFound as e:
                             await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                                    f"У {player.name} не подключена телега к чату.")
@@ -97,7 +99,8 @@ async def check_guild_points(*args, **kwargs):
 
 
 async def update_db(*args, **kwargs):
-    await PlayerData().update_players_data()
     await GuildData().build_db()
+    await PlayerData().update_players_data()
+
 
 

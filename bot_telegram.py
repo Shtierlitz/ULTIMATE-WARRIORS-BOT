@@ -4,7 +4,7 @@ import os
 import apsched
 import settings
 from aiogram.utils import executor
-from handlers import member, admin, player_data, send_group_message
+from handlers import member, admin, player_data, send_group_message, developer
 from create_bot import dp, bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
@@ -28,6 +28,7 @@ member.register_handlers_member(dp)  # регистрация хендлеров
 player_data.register_handlers_player(dp)
 send_group_message.register_handlers_group_message(dp)
 admin.register_handlers_admin(dp)
+developer.register_handlers_developer(dp)
 
 if __name__ == '__main__':
     # while True:

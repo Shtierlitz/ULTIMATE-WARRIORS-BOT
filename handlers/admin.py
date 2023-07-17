@@ -13,9 +13,9 @@ from src.utils import split_list, get_players_list_from_ids, add_player_to_ids, 
     delete_player_from_ids, check_guild_players
 
 COMMANDS = {
-    "admin": "Получить информацию о доступных командах администратора",
+    "admin": "Получить информацию о доступных командах администратора ⚙⚒",
     "group": "Сиквенция отправки групового сообщения",
-    "add_player": "Записать нового игрока в базу (через пробел 3 значения - имя код_союзника тг_id)",
+    "add_player": "Записать нового игрока в базу (через пробел 3 значения - имя код_союзника тг_id)\nЕсли нету тг ID или tg_nic то вместо пишите исключительно - null",
     "players_list": "Вывести все записи по игрокам (не стоит использовать в общих чатах)",
     "delete_player": "Удалить игрока из базы по имени",
     "graphic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц",
@@ -23,6 +23,7 @@ COMMANDS = {
     "guild_year": "Выводит график роста ГМ гильдии за год",
     "refresh": "Экстреннее обновление базы данных",
     "check": "Проверка всех пользователей на доступность для бота",
+    "developer": "Получить информацию о доступных командах разработчика (Не влезай - убьет! ☠️)"
     # Добавьте здесь другие команды по мере необходимости
 }
 
@@ -43,13 +44,13 @@ async def command_db_extra(message: types.Message):
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
         # try:
-            await bot.send_message(message.chat.id,
-                                   "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
-            await PlayerData().update_players_data()
-            await GuildData().build_db()
-        # except Exception as e:
-        #     print(e)
-        #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+        await bot.send_message(message.chat.id,
+                               "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
+        await PlayerData().update_players_data()
+        await GuildData().build_db()
+    # except Exception as e:
+    #     print(e)
+    #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def add_player(message: types.Message):
@@ -128,16 +129,15 @@ async def send_year_guild_grafic(message: types.Message):
             await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
-
-
-
 async def check_ids(message: types.Message):
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
         # try:
-            await check_guild_players(message)
-        # except Exception as e:
-        #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+        await check_guild_players(message)
+    # except Exception as e:
+    #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
+
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(command_db_extra, commands=['refresh'], is_chat_admin=True)
     dp.register_message_handler(add_player, commands=['add_player'], is_chat_admin=True)

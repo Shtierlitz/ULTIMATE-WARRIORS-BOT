@@ -30,10 +30,6 @@ async def gac_statistic() -> tuple:
     count_false = 0
     link_pre = 'https://swgoh.gg/p/'
     for i in players_list:
-        # request = requests.get(f"http://api.swgoh.gg/player/{i.ally_code}/gac-bracket/")
-        #
-        # if request.status_code == 200:
-        #     data = request.json()
         async with aiohttp.ClientSession() as session:
             async with session.get(f"http://api.swgoh.gg/player/{i.ally_code}/gac-bracket/") as request:
                 if request.status == 200:
@@ -276,3 +272,25 @@ def get_localized_datetime(timestamp_millis: int, timezone_str: str = None) -> d
 
     return date_object
 
+async def delete_db_player_data(val):
+    """Безвозвратно удаляет все записи связанные с игроком из БД"""
+    async with async_session_maker() as session:
+        player_records = await session.execute(
+            select(Player).filter_by(name=val))
+        player_records = player_records.scalars().all()
+        if len(player_records) == 0:
+            async with async_session_maker() as session:
+                player_records = await session.execute(
+                    select(Player).filter_by(ally_code=int(val)))
+                player_records = player_records.scalars().all()
+                if len(player_records) == 0:
+                    bot.send_message(os.environ.get('OFFICER_CHAT_ID', f"Игрок с значением {val} отсутствует\n"
+                                                                       f"Проверьте правильность написания имени или кода союзника"))
+                    return
+    player_name: str = player_records[0].name
+    for player in player_records:
+        async with async_session_maker() as session:
+            await session.delete(player)
+            await session.commit()
+
+    return player_name
