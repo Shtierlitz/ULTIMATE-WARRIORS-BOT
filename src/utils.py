@@ -15,6 +15,7 @@ from create_bot import bot
 from db_models import Player
 from settings import async_session_maker
 from aiogram.utils.exceptions import ChatNotFound
+import random as rn
 
 
 async def gac_statistic() -> tuple:
@@ -272,6 +273,7 @@ def get_localized_datetime(timestamp_millis: int, timezone_str: str = None) -> d
 
     return date_object
 
+
 async def delete_db_player_data(val):
     """Безвозвратно удаляет все записи связанные с игроком из БД"""
     async with async_session_maker() as session:
@@ -294,3 +296,14 @@ async def delete_db_player_data(val):
             await session.commit()
 
     return player_name
+
+
+async def send_points_message(player: Player, speach_list: list, rus: bool):
+    try:
+        await send_photo_message(player.tg_id,
+                                 f"{player.name}, {rn.choice(speach_list)} {player.reid_points} {'купонов' if rus else 'points'}.")
+        print(f"{player.name} энка")
+        await asyncio.sleep(15)
+    except ChatNotFound as e:
+        await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                               f"У {player.name} не подключена телега к чату.")

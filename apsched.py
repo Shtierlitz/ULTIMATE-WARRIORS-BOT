@@ -7,7 +7,7 @@ from create_bot import bot
 
 from settings import async_session_maker
 from src.guild import GuildData
-from src.utils import get_new_day_start, send_photo_message
+from src.utils import get_new_day_start, send_photo_message, send_points_message
 from src.player import Player, PlayerData, PlayerScoreService
 from aiogram.utils.exceptions import ChatNotFound
 
@@ -66,24 +66,9 @@ async def check_guild_points(*args, **kwargs):
             try:
                 if player.tg_id != "null":
                     if player.ally_code in eng_members_list:
-                        try:
-                            await send_photo_message(player.tg_id,
-                                                     f"{player.name}, {rn.choice(message_list_eng)} {player.reid_points} points.")
-                            print(f"{player.name} энка")
-                            await asyncio.sleep(5)
-                        except ChatNotFound as e:
-                            await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                                                   f"У {player.name} не подключена телега к чату.")
-
+                        await send_points_message(player, message_list_eng, rus=False)
                     else:
-                        try:
-                            await send_photo_message(player.tg_id,
-                                                     f"{player.name}, {rn.choice(message_list_ru)} {player.reid_points} купонов.")
-                            print(f"{player.name} энка")
-                            await asyncio.sleep(5)
-                        except ChatNotFound as e:
-                            await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                                                   f"У {player.name} не подключена телега к чату.")
+                        await send_points_message(player, message_list_ru, rus=True)
                 else:
                     await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                            f"У {player.name} нету идентификатора в боте.")
