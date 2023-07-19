@@ -4,7 +4,7 @@ import os
 import apsched
 import settings
 from aiogram.utils import executor
-from handlers import member, admin, player_data, send_group_message, developer
+from handlers import member, admin, player_data, send_group_message, developer, send_message_everyone
 from create_bot import dp, bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
@@ -31,6 +31,7 @@ async def on_startup(_):  # функция настроек старта бот�
 member.register_handlers_member(dp)  # регистрация хендлеров
 player_data.register_handlers_player(dp)
 send_group_message.register_handlers_group_message(dp)
+send_message_everyone.register_handlers_message_all(dp)
 admin.register_handlers_admin(dp)
 developer.register_handlers_developer(dp)
 

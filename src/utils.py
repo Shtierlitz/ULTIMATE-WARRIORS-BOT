@@ -303,7 +303,7 @@ async def send_points_message(player: Player, speach_list: list, rus: bool):
         await send_photo_message(player.tg_id,
                                  f"{player.name}, {rn.choice(speach_list)} {player.reid_points} {'купонов' if rus else 'points'}.")
         print(f"{player.name} энка")
-        await asyncio.sleep(15)
+        await asyncio.sleep(30)
     except ChatNotFound as e:
         await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                f"У {player.name} не подключена телега к чату.")
