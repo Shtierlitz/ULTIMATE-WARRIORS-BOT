@@ -112,15 +112,11 @@ async def get_players_list_from_ids(message: types.Message) -> Tuple[str, str]:
         await bot.send_message(message.chat.id, "Файл ids.json не найден.")
 
 
-async def add_player_to_ids(message: types.Message) -> None:
+async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
     """Добавляет запись о пользователе в ids.json"""
-    player_info = message.text.split(" ")
-    if len(player_info) != 5:
-        await bot.send_message(message.chat.id,
-                               f"Неверный формат команды. Используйте: \n/add_player имя код_союзника тг_id тг_ник\n Все через один пробел.")
-        return
+
     # имя игрока, код и ID телеграма и ник в телеграме
-    player_name, ally_code, tg_id, tg_nic = player_info[1], player_info[2], player_info[3], player_info[4]
+    player_name, ally_code, tg_id, tg_nic = new_data['player_name'], new_data["ally_code"], new_data['tg_id'], new_data['tg_nic']
 
     file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')
     if os.path.exists(file_path):

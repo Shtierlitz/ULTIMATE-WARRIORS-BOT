@@ -39,7 +39,7 @@ def handle_exception(future):
     exception = future.exception()
     if exception:
         # здесь обработка исключения
-        print(f"Ошибка: {exception}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+        print(f"Ошибка:\n\n❌❌{exception}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 # Ваши обработчики
@@ -53,7 +53,7 @@ async def command_start(message: types.Message):
 
         except Exception as e:
             print(e)
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def command_gac_statistic(message: types.Message):
@@ -69,7 +69,7 @@ async def command_gac_statistic(message: types.Message):
             await bot.send_message(message.chat.id, text=st_4, parse_mode="Markdown")
             await bot.send_message(message.chat.id, text=st_5, parse_mode="Markdown")
         except Exception as e:
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def get_user_data(message: types.Message):
@@ -87,7 +87,7 @@ async def get_user_data(message: types.Message):
             player_str_list = await PlayerData().extract_data(player)
             await bot.send_message(message.chat.id, player_str_list)
         except Exception as e:
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def get_raid_points(message: types.Message):
@@ -97,7 +97,7 @@ async def get_raid_points(message: types.Message):
             message_strings = await PlayerScoreService.get_raid_scores()
             await bot.send_message(message.chat.id, message_strings)
         except Exception as e:
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def get_raid_points_all(message: types.Message):
@@ -107,7 +107,7 @@ async def get_raid_points_all(message: types.Message):
             message_strings = await PlayerScoreService.get_raid_scores_all()
             await bot.send_message(message.chat.id, message_strings)
         except Exception as e:
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def get_raid_lazy(message: types.Message):
@@ -117,7 +117,7 @@ async def get_raid_lazy(message: types.Message):
             message_strings = await PlayerScoreService.get_reid_lazy_fools()
             await bot.send_message(message.chat.id, message_strings)
         except Exception as e:
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def get_guild_info(message: types.Message):
@@ -128,7 +128,7 @@ async def get_guild_info(message: types.Message):
             info_text = "\n".join(guild_info)
             await bot.send_message(message.chat.id, info_text)
         except Exception as e:
-            await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])

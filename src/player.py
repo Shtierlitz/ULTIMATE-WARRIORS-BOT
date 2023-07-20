@@ -95,7 +95,8 @@ class PlayerData:
         player.update_time = datetime.now()
         player.reid_points = data['reid_points']
 
-        player.lastActivityTime = get_localized_datetime(int(data['lastActivityTime']), str(os.environ.get('TIME_ZONE')))
+        player.lastActivityTime = get_localized_datetime(int(data['lastActivityTime']),
+                                                         str(os.environ.get('TIME_ZONE')))
 
         player.level = data['level']
         player.player_id = data['playerId']
@@ -185,7 +186,6 @@ class PlayerData:
                 message = f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json и дождитесь обновления swgoh.gg"
                 error_list.append(message)
 
-
         print("\n".join(error_list))
         print("Данные игроков в базе обновлены.")
 
@@ -251,22 +251,41 @@ class PlayerScoreService:
 
     @staticmethod
     async def get_raid_scores_all():
+        """Возвращает строку из списка всх рейд купонов по народу за месяц"""
         all_players = await PlayerScoreService.get_all_players()
         if not all_players:
             return "Нет данных об игроках."
+        now = datetime.now()
+        start_date = datetime(now.year, now.month, 1)
+        if now.month == 12:
+            end_date = datetime(now.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = datetime(now.year, now.month + 1, 1) - timedelta(days=1)
         async with async_session_maker() as session:  # открываем асинхронную сессию
             query = await session.execute(
-                select(Player).order_by(Player.update_time).limit(1))
+                select(Player).filter(
+                    Player.update_time >= start_date,
+                    Player.update_time <= end_date
+                ).order_by(Player.update_time).limit(1)
+            )
             player: Player = query.scalar_one()
 
         sorted_scores, total_points = PlayerScoreService.get_sorted_scores(all_players)
         scores = await format_scores(sorted_scores, filter_points=None, total=False)
         scores.append(f"Всего купонов от {player.update_time.strftime('%d.%m')}: {total_points}")
-        scores.insert(0, f"\nСписок всех купонов за месяц:\n")
+
+        today = datetime.today().date()
+        if today == end_date.today().date():
+            scores.insert((0,
+                           f"⚠️⚠️⚠️ВНИМАНИЕ!!!⚠️⚠️⚠️\n🖊🖊Последний день месяца! Эту таблицу надо сохранить🖊🖊\nДанные за {end_date}\n"))
+        else:
+            scores.insert(0, f"\nСписок всех купонов за текущий месяц:\n")
+
         return f"\n{'-' * 30}\n".join(scores)
 
     @staticmethod
     async def get_reid_lazy_fools():
+        """Возвращает строку из списка всех кто еще не сдал 600 энки на текущий момент"""
         recent_players = await PlayerScoreService.get_recent_players()
         if not recent_players:
             return "Нет данных об игроках."

@@ -74,18 +74,25 @@ async def check_guild_points(*args, **kwargs):
                                            f"У {player.name} нету идентификатора в боте.")
             except Exception as e:
                 await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                                       f"Произошла ошибка при отправке автосообщения про энку: {e}.\n\nПроизошло это на пользователе: {player.name}\nВероятнее всего не з\дал свой тг id или не нажал /start у бота")
+                                       f"Произошла ошибка при отправке автосообщения про энку: \n\n{e}\n\nПроизошло это на пользователе: {player.name}\nВероятнее всего не з\дал свой тг id или не нажал /start у бота")
         # Отправляем офицерам напоминалку кто не сдал еще энку
         message_strings = await PlayerScoreService.get_reid_lazy_fools()
         await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message_strings)
     except Exception as e:
         await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                               f"Произошла ошибка при отправке автосообщения про энку: {e}.")
+                               f"Произошла ошибка при отправке автосообщения про энку: \n\n{e}\n.")
 
 
 async def update_db(*args, **kwargs):
     await GuildData().build_db()
     await PlayerData().update_players_data()
 
+async def final_points_per_month():
+    try:
+        message = await PlayerScoreService.get_raid_scores_all()
 
+        await bot.send_message(os.environ.get("OFFICER_CHAT_ID"), message)
+    except Exception as e:
+        await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                               f"Произошла ошибка при отправке месячного графика про энку:\n\n{e}\n.")
 
