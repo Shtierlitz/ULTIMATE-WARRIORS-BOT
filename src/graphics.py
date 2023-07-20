@@ -14,6 +14,7 @@ from sqlalchemy import select, or_
 
 from src.utils import get_new_day_start
 from aiogram import types
+from datetime import datetime, timedelta
 
 
 async def get_player_gp_graphic(player_name, period):
@@ -271,6 +272,60 @@ async def get_guild_galactic_power(period: str) -> io.BytesIO:
         opacity=0.8
     )
 
+    buf = io.BytesIO()
+    pio.write_image(fig, buf, format='png')
+    buf.seek(0)
+
+    return buf
+
+
+async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool = None) -> io.BytesIO or None:
+    new_day_start = datetime.now()
+    if period == "month":
+        one_month_ago = new_day_start - relativedelta(months=1)  # Вычислить дату один месяц назад
+        async with async_session_maker() as session:
+            player_data = await session.execute(
+                select(Player).filter_by(name=player_name).filter(
+                    Player.update_time >= one_month_ago))  # Использовать эту дату в фильтре
+            player_data = player_data.scalars().all()
+    else:
+        one_year_ago = new_day_start - relativedelta(years=1)
+        async with async_session_maker() as session:
+            player_data = await session.execute(
+                select(Player).filter_by(name=player_name).filter(
+                    Player.update_time >= one_year_ago))  # Использовать эту дату в фильтре
+            player_data = player_data.scalars().all()
+
+    if not player_data:
+        return None
+
+    # Подготовка данных для построения графика
+    if is_fleet:
+        rank_data = [(player.update_time.strftime("%d-%m-%Y"), player.fleet_arena_rank) for player in player_data]
+    else:
+        rank_data = [(player.update_time.strftime("%d-%m-%Y"), player.arena_rank) for player in player_data]
+
+    rank_data.sort(key=lambda x: x[0])  # Сортируем по дате
+    update_times, ranks = zip(*rank_data)
+
+    # Построение графика
+    fig = go.Figure(data=go.Scatter(
+        x=update_times,
+        y=ranks,
+        mode='lines+markers+text',
+        text=ranks,
+        textposition='top center'))
+
+    fig.update_layout(
+        title=f'<b>{player_name}\'s Arena Rank</b> Over <b>{period.capitalize()}</b>' if not is_fleet else f'<b>{player_name}\'s Fleet Arena Rank</b> Over <b>{period.capitalize()}</b>',
+        xaxis_title='Update Time',
+        yaxis_title='Rank',
+        yaxis=dict(
+            dtick=1
+        )
+    )
+
+    # Сохранение графика в виде файла изображения
     buf = io.BytesIO()
     pio.write_image(fig, buf, format='png')
     buf.seek(0)

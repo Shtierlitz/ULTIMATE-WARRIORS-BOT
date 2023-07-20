@@ -100,7 +100,8 @@ class PlayerData:
 
         player.level = data['level']
         player.player_id = data['playerId']
-        player.arena_rank = data['arena_rank']
+        player.arena_rank = data['comlink_arena_rank']
+        player.fleet_arena_rank = data['comlink_fleet_arena_rank']
         player.galactic_power = data['galactic_power']
         player.character_galactic_power = data['character_galactic_power']
         player.ship_galactic_power = data['ship_galactic_power']
@@ -168,6 +169,8 @@ class PlayerData:
                 final_data.update({'level': comlink_data['level']})
                 final_data.update({'playerId': comlink_data['playerId']})
                 final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
+                final_data.update({'comlink_arena_rank': comlink_data['pvpProfile'][0]['rank']})
+                final_data.update({'comlink_fleet_arena_rank': comlink_data['pvpProfile'][1]['rank']})
                 try:
                     member_contribution_dict = {item['type']: item['currentValue'] for item in
                                                 guild_data_dict[comlink_data['name']]['memberContribution']}

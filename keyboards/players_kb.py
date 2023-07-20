@@ -48,6 +48,8 @@ async def create_player_info_keyboard(player_name: str):
         keyboard.row(KeyboardButton("back"), KeyboardButton("cencel")) # Создать отдельную строку для кнопки "cencel"
         keyboard.row(KeyboardButton("all_data"))
         keyboard.row(KeyboardButton("GP_month"), KeyboardButton("GP_year"))
+        keyboard.row(KeyboardButton("arena_graphic_month"), KeyboardButton("fleet_arena_graphic_month"))
+        keyboard.row(KeyboardButton("arena_graphic_year"), KeyboardButton("fleet_arena_graphic_year"))
 
         row_btns = []  # Создать список для кнопок строк
 

@@ -42,7 +42,8 @@ class Player(Base):
     lastActivityTime = Column(DateTime, default=datetime.now())  # последний раз как заходил в игру
     level = Column(Integer)                     # уровень аккаунта
     player_id = Column(String(100))                 # id игрока в системе игры
-    arena_rank = Column(Integer)               # ранг арены
+    arena_rank = Column(Integer)                # ранг арены
+    fleet_arena_rank = Column(Integer)          # ранг арены флота
     galactic_power = Column(Integer)            # общая галактическая мощь
     character_galactic_power = Column(Integer)    # Галактическая мощь по персонажам
     ship_galactic_power = Column(Integer)         # Галактическая мощь по флоту

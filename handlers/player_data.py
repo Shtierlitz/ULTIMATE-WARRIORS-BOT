@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from middlewares.user_check import guild_members
-from src.graphics import get_player_gp_graphic
+from src.graphics import get_player_gp_graphic, get_player_rank_graphic
 from src.player import PlayerData
 from src.guild import GuildData
 from create_bot import bot
@@ -42,7 +42,6 @@ async def player_buttons(message: types.Message, state: FSMContext):
         await PlayerState.player_name.set()
 
 
-
 async def player_info_buttons(message: types.Message, state: FSMContext):
     """Открывает панель кнопок с инфой об игроке"""
     is_guild_member = message.conf.get('is_guild_member', False)
@@ -72,34 +71,42 @@ async def player_info_buttons(message: types.Message, state: FSMContext):
 async def player_data_info(message: types.Message, state: FSMContext):
     """Возвращает выбранные данные по игроку"""
     is_guild_member = message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        if message.text == 'cencel':
-            return await cancel_handler(message, state)
+    if not is_guild_member or message.text == 'cancel':
+        return await cancel_handler(message, state)
 
-        data = await state.get_data()
-        player_name = data.get("player_name")
-        player = await get_player_by_name_or_nic(player_name)
-        if not player:  # Если игрока с таким именем нет в базе данных
-            return await cancel_handler(message, state)
-        key = message.text
-        if key == 'back':
-            await back_handler(message, state)
-        elif key == 'all_data':
-            player_str_list = await PlayerData().extract_data(player)
-            await bot.send_message(message.chat.id, player_str_list)
-        elif key == "GP_month":
-            image = await get_player_gp_graphic(player.name, 'month')
-            await bot.send_photo(chat_id=message.chat.id, photo=image)
-        elif key == "GP_year":
-            image = await get_player_gp_graphic(player.name, 'year')
-            await bot.send_photo(chat_id=message.chat.id, photo=image)
-        elif key in player.__dict__:  # Проверяем, является ли ввод ключом в словаре атрибутов игрока
-            player_data = player.__dict__[key]
-            await message.reply(f"Данные {key} о пользователе {player.name}:\n{player_data}")
-        else:  # Если ввод не является командой и не соответствует атрибутам игрока
-            await state.reset_state()
-            await message.answer('Неизвестная команда. Выбор данных игрока отменён.',
-                                 reply_markup=types.ReplyKeyboardRemove())
+    data = await state.get_data()
+    player_name = data.get("player_name")
+    player = await get_player_by_name_or_nic(player_name)
+
+    if not player:  # Если игрока с таким именем нет в базе данных
+        return await cancel_handler(message, state)
+
+    key = message.text
+    if key == 'back':
+        return await back_handler(message, state)
+
+    graphic_keys = {
+        "GP_month": (get_player_gp_graphic, player.name, 'month', False),
+        "GP_year": (get_player_gp_graphic, player.name, 'year', False),
+        "arena_graphic_month": (get_player_rank_graphic, player.name, 'month', False),
+        "fleet_arena_graphic_month": (get_player_rank_graphic, player.name, 'month', True),
+        "arena_graphic_year": (get_player_rank_graphic, player.name, 'year', False),
+        "fleet_arena_graphic_year": (get_player_rank_graphic, player.name, 'year', True),
+    }
+
+    if key in graphic_keys:
+        func, name, period, is_fleet = graphic_keys[key]
+        image = await func(name, period, is_fleet)
+        return await bot.send_photo(chat_id=message.chat.id, photo=image)
+
+    if key in player.__dict__:
+        player_data = player.__dict__[key]
+        return await message.reply(f"Данные {key} о пользователе {player.name}:\n{player_data}")
+
+    # Если ввод не является командой и не соответствует атрибутам игрока
+    await state.reset_state()
+    return await message.answer('Неизвестная команда. Выбор данных игрока отменён.',
+                                reply_markup=types.ReplyKeyboardRemove())
 
 
 async def default_state_handler(message: types.Message, state: FSMContext):
@@ -133,7 +140,6 @@ async def back_handler(message: types.Message, state: FSMContext):
             await player_buttons(message, state)
         else:
             await state.finish()
-
 
 
 def register_handlers_player(dp: Dispatcher):
