@@ -90,6 +90,7 @@ async def update_db(*args, **kwargs):
 async def final_points_per_month():
     # Check if today is the last day of the month
     tomorrow = datetime.now() + timedelta(days=1)
+    print("функция шедулера по отправки месячного сообщения выполнилась", tomorrow.day)
     if tomorrow.day == 1:
         try:
             message = await PlayerScoreService.get_raid_scores_all()

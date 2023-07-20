@@ -8,7 +8,7 @@ from db_models import Player
 from datetime import datetime, date
 
 from settings import async_session_maker
-from src.utils import get_new_day_start
+from src.utils import get_new_day_start, get_player_by_name_or_nic
 
 
 async def create_keyboard():
@@ -42,13 +42,8 @@ async def create_keyboard():
 async def create_player_info_keyboard(player_name: str):
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 
-    new_day_start = get_new_day_start()
-    async with async_session_maker() as session:
-        query = await session.execute(
-            select(Player).filter(Player.update_time >= new_day_start, Player.name == player_name))
-        player = query.scalars().first()
+    player = await get_player_by_name_or_nic(player_name)
 
-    # player = session.query(Player).filter(func.date(Player.update_time) == today, Player.name == player_name).first()
     if player:
         keyboard.row(KeyboardButton("back"), KeyboardButton("cencel")) # Создать отдельную строку для кнопки "cencel"
         keyboard.row(KeyboardButton("all_data"))

@@ -12,5 +12,6 @@ docker run --name=swgoh-stats --network swgoh -d --restart always --env-file .en
 docker run --rm -it -p 3223:3223 --env-file .env swgoh-stats  
 
 
-
+alembic revision --m="initial check" --autogenerate               генерация миграций
+alembic upgrade head                 применение миграций
 

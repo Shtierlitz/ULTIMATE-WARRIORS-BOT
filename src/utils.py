@@ -303,3 +303,22 @@ async def send_points_message(player: Player, speach_list: list, rus: bool):
     except ChatNotFound as e:
         await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                f"У {player.name} не подключена телега к чату.")
+
+
+async def get_player_by_name_or_nic(player_name: str) -> Player:
+    """Находит игрока в базе по тг нику или по имени акка"""
+    new_day_start = get_new_day_start()  # начало нового дня
+    async with async_session_maker() as session:
+        # Первый запрос: попытка найти по Player.name
+        query = await session.execute(
+            select(Player).filter(Player.update_time >= new_day_start, Player.name == player_name)
+        )
+        player = query.scalars().first()
+
+        # Если игрок не найден по имени, попытка найти по tg_nic
+        if not player:
+            query = await session.execute(
+                select(Player).filter(Player.update_time >= new_day_start, Player.tg_nic == player_name)
+            )
+            player = query.scalars().first()
+        return player
