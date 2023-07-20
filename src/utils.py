@@ -84,7 +84,7 @@ def get_new_day_start() -> datetime:
 
 async def get_players_list_from_ids(message: types.Message) -> Tuple[str, str]:
     """Возвращает список содержимого в ids.json"""
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')
+    file_path = os.path.join(os.path.dirname(__file__), '..', os.environ.get("IDS_JSON"))
     if os.path.exists(file_path):
         with open(file_path, "r", encoding='utf-8') as json_file:
             data = json.load(json_file)
@@ -118,7 +118,7 @@ async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
     # имя игрока, код и ID телеграма и ник в телеграме
     player_name, ally_code, tg_id, tg_nic = new_data['player_name'], new_data["ally_code"], new_data['tg_id'], new_data['tg_nic']
 
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')
+    file_path = os.path.join(os.path.dirname(__file__), '..', os.environ.get("IDS_JSON"))
     if os.path.exists(file_path):
         with open(file_path, "r") as json_file:
             data = json.load(json_file)
@@ -149,7 +149,7 @@ async def delete_player_from_ids(message: types.Message):
         await message.reply("Пожалуйста, предоставьте имя игрока.")
         return
 
-    file_path = os.path.join(os.path.dirname(__file__), '../ids.json')
+    file_path = os.path.join(os.path.dirname(__file__), f'../{os.environ.get("IDS_JSON")}')
 
     with open(file_path, 'r', encoding='utf-8') as json_file:
         data = json.load(json_file)
@@ -215,7 +215,7 @@ async def check_guild_players(message: types.Message):
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
         # try:
-        file_path = os.path.join(os.path.dirname(__file__), '../ids.json')
+        file_path = os.path.join(os.path.dirname(__file__), f'../{os.environ.get("IDS_JSON")}')
         with open(file_path, 'r', encoding='utf-8') as file:
             players = json.load(file)
 
