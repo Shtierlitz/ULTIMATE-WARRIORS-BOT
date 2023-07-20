@@ -1,6 +1,9 @@
 # bot_telegram.py
 
 import os
+
+from apscheduler.triggers.cron import CronTrigger
+
 import apsched
 import settings
 from aiogram.utils import executor
@@ -22,6 +25,10 @@ async def on_startup(_):  # функция настроек старта бот�
                       minute=int(os.environ.get("REMIND_GUILD_POINTS_MINUTES", 30)),
                       timezone=os.environ.get("TIME_ZONE", "UTC"))
     scheduler.add_job(apsched.update_db, trigger='interval', minutes=5)
+    # Добавляем задачу, которая будет запускаться в последний день каждого месяца в выбранное время в .env или в 16:20
+    scheduler.add_job(apsched.final_points_per_month, 'cron',
+                      hour=int(os.environ.get("REMIND_LAST_MONTH_POINTS_HOUR", 16)),
+                      minute=int(os.environ.get("REMIND_LAST_MONTH_POINTS_MINUTES", 16)))
 
     scheduler.start()
 
@@ -34,7 +41,6 @@ send_message_everyone.register_handlers_message_all(dp)
 
 admin.register_handlers_admin(dp)
 developer.register_handlers_developer(dp)
-
 
 if __name__ == '__main__':
     # while True:

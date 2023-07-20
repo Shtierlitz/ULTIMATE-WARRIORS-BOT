@@ -1,19 +1,18 @@
 # apsched.py
 
-import asyncio
+
 import os
 
 from create_bot import bot
 
 from settings import async_session_maker
 from src.guild import GuildData
-from src.utils import get_new_day_start, send_photo_message, send_points_message
+from src.utils import get_new_day_start, send_points_message
 from src.player import Player, PlayerData, PlayerScoreService
-from aiogram.utils.exceptions import ChatNotFound
-
+from datetime import datetime, timedelta
 from sqlalchemy import and_, select, cast, Integer
 from dotenv import load_dotenv
-import random as rn
+
 
 load_dotenv()
 
@@ -87,12 +86,14 @@ async def update_db(*args, **kwargs):
     await GuildData().build_db()
     await PlayerData().update_players_data()
 
+
 async def final_points_per_month():
-    try:
-        message = await PlayerScoreService.get_raid_scores_all()
-
-        await bot.send_message(os.environ.get("OFFICER_CHAT_ID"), message)
-    except Exception as e:
-        await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                               f"Произошла ошибка при отправке месячного графика про энку:\n\n{e}\n.")
-
+    # Check if today is the last day of the month
+    tomorrow = datetime.now() + timedelta(days=1)
+    if tomorrow.day == 1:
+        try:
+            message = await PlayerScoreService.get_raid_scores_all()
+            await bot.send_message(os.environ.get("OFFICER_CHAT_ID"), message)
+        except Exception as e:
+            await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                                   f"Произошла ошибка при отправке месячного графика про энку:\n\n❌❌{e}❌❌\n\n")
