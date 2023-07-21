@@ -8,7 +8,7 @@ from create_bot import bot
 from settings import async_session_maker
 from src.guild import GuildData
 from src.utils import get_new_day_start, send_points_message
-from src.player import Player, PlayerData, PlayerScoreService
+from src.player import Player, PlayerData, PlayerScoreService, PlayerPowerService
 from datetime import datetime, timedelta
 from sqlalchemy import and_, select, cast, Integer
 from dotenv import load_dotenv
@@ -94,7 +94,20 @@ async def final_points_per_month():
     if tomorrow.day == 1:
         try:
             message = await PlayerScoreService.get_raid_scores_all()
-            await bot.send_message(os.environ.get("OFFICER_CHAT_ID"), message)
+            await bot.send_message(os.environ.get("POINTS_CHAT_ID"), message)
         except Exception as e:
-            await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+            await bot.send_message(os.environ.get('POINTS_CHAT_ID'),
+                                   f"Произошла ошибка при отправке месячного графика про энку:\n\n❌❌{e}❌❌\n\n")
+
+
+async def final_gp_per_month():
+    # Check if today is the last day of the month
+    tomorrow = datetime.now() + timedelta(days=1)
+    print("функция шедулера по отправки месячного сообщения выполнилась", tomorrow.day)
+    if tomorrow.day == 1:
+        try:
+            message = await PlayerPowerService.get_galactic_power_all()
+            await bot.send_message(os.environ.get("GP_CHAT_ID"), message)
+        except Exception as e:
+            await bot.send_message(os.environ.get('GP_CHAT_ID'),
                                    f"Произошла ошибка при отправке месячного графика про энку:\n\n❌❌{e}❌❌\n\n")
