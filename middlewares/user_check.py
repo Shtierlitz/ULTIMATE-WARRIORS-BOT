@@ -1,4 +1,5 @@
 # middlewares/user_check.py
+import os
 
 from aiogram.dispatcher import FSMContext
 import json
@@ -6,8 +7,15 @@ from aiogram import types
 from aiogram.dispatcher.middlewares import BaseMiddleware
 
 
-# Загрузите ids.json в память
-with open("./ids.json") as f:
+# Получить путь к текущему файлу
+current_file_path = os.path.realpath(__file__)
+# Получить путь к каталогу текущего файла
+current_dir_path = os.path.dirname(current_file_path)
+# Сформировать путь к ids.json
+ids_file_path = os.path.join(current_dir_path, '..', os.environ.get('IDS_JSON'))
+
+# Загрузить ids.json в память
+with open(ids_file_path) as f:
     guild_members = json.load(f)
 
 

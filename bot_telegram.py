@@ -28,7 +28,7 @@ async def on_startup(_):  # функция настроек старта бот�
     # Добавляем задачу, которая будет запускаться в последний день каждого месяца в выбранное время в .env или в 16:20
     scheduler.add_job(apsched.final_points_per_month, 'cron',
                       hour=int(os.environ.get("REMIND_LAST_MONTH_POINTS_HOUR", 16)),
-                      minute=int(os.environ.get("REMIND_LAST_MONTH_POINTS_MINUTES", 16)))
+                      minute=int(os.environ.get("REMIND_LAST_MONTH_POINTS_MINUTES", 25)))
 
     scheduler.start()
 

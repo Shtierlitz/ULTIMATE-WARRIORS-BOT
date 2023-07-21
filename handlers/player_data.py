@@ -86,17 +86,17 @@ async def player_data_info(message: types.Message, state: FSMContext):
         return await back_handler(message, state)
 
     graphic_keys = {
-        "GP_month": (get_player_gp_graphic, player.name, 'month', False),
-        "GP_year": (get_player_gp_graphic, player.name, 'year', False),
-        "arena_graphic_month": (get_player_rank_graphic, player.name, 'month', False),
-        "fleet_arena_graphic_month": (get_player_rank_graphic, player.name, 'month', True),
-        "arena_graphic_year": (get_player_rank_graphic, player.name, 'year', False),
-        "fleet_arena_graphic_year": (get_player_rank_graphic, player.name, 'year', True),
+        "GP_month": (get_player_gp_graphic, (player.name, 'month')),
+        "GP_year": (get_player_gp_graphic, (player.name, 'year')),
+        "arena_graphic_month": (get_player_rank_graphic, (player.name, 'month', False)),
+        "fleet_arena_graphic_month": (get_player_rank_graphic, (player.name, 'month', True)),
+        "arena_graphic_year": (get_player_rank_graphic, (player.name, 'year', False)),
+        "fleet_arena_graphic_year": (get_player_rank_graphic, (player.name, 'year', True)),
     }
 
     if key in graphic_keys:
-        func, name, period, is_fleet = graphic_keys[key]
-        image = await func(name, period, is_fleet)
+        func, args = graphic_keys[key]
+        image = await func(*args)
         return await bot.send_photo(chat_id=message.chat.id, photo=image)
 
     if key in player.__dict__:

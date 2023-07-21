@@ -50,7 +50,6 @@ async def command_start(message: types.Message):
             await bot.send_message(message.chat.id, f"Начинаем работу.")
             commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
             await bot.send_message(message.chat.id, f"Список доступных команд:\n\n{commands}")
-
         except Exception as e:
             print(e)
             await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")

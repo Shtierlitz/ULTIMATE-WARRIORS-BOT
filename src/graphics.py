@@ -58,8 +58,6 @@ async def get_player_gp_graphic(player_name, period):
     if period == "month":
         data.pop()
 
-    # Разделяем отсортированный список кортежей обратно на два списка
-    x_values, y_values = zip(*data)
 
     fig = go.Figure(data=go.Scatter(
         x=x_values,
