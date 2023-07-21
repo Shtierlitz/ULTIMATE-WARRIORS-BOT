@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from sqlalchemy import select
 
 from src.utils import gac_statistic, get_new_day_start
-from src.player import PlayerData, PlayerScoreService
+from src.player import PlayerData, PlayerScoreService, PlayerPowerService
 from src.guild import GuildData
 from create_bot import bot
 from settings import async_session_maker
@@ -24,7 +24,8 @@ COMMANDS = {
     "gac": "Получить полную статистику по регистрации на ВА с сылками на возможных соперников",
     "reid_list": "Показывает полный список кто сколько купонов сдал",
     "reid_lazy": "Список тех кто еще не сдал 600",
-    "reid_all": "Список сданной энки за все время",
+    "reid_all": "Список сданной энки за календарный месяц",
+    "gp_all": "Список роста всей галактической мощи за календарный месяц",
     "guildinfo": "Инфа о гильдии",
     "admin": "Список команд администраторов",
 
@@ -129,6 +130,17 @@ async def get_guild_info(message: types.Message):
         except Exception as e:
             await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
+
+async def get_gp_all(message: types.Message):
+    """Вся галактическая мощь за месяц по всем"""
+    is_guild_member = message.conf.get('is_guild_member', False)
+    if is_guild_member:
+        # try:
+            message_strings = await PlayerPowerService.get_galactic_power_all()
+            await bot.send_message(message.chat.id, message_strings)
+        # except Exception as e:
+        #     await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+
 def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
     dp.register_message_handler(get_user_data, commands=['player1'], state='*', run_task=True)
@@ -136,4 +148,5 @@ def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(get_raid_points, commands=['reid_list'], state='*')
     dp.register_message_handler(get_raid_lazy, commands=['reid_lazy'], state='*')
     dp.register_message_handler(get_raid_points_all, commands=['reid_all'], state='*')
+    dp.register_message_handler(get_gp_all, commands=['gp_all'], state='*')
     dp.register_message_handler(get_guild_info, commands=['guildinfo'])

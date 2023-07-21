@@ -3,6 +3,7 @@ import io
 import json
 import os
 from collections import defaultdict
+from typing import List
 
 import aiohttp
 import pytz
@@ -275,14 +276,14 @@ class PlayerScoreService:
 
         sorted_scores, total_points = PlayerScoreService.get_sorted_scores(all_players)
         scores = await format_scores(sorted_scores, filter_points=None, total=False)
-        scores.append(f"Всего купонов от {player.update_time.strftime('%d.%m')}: {total_points}")
+        scores.append(f"Всего купонов от {player.update_time.strftime('%d.%m.%y')}:    {total_points}")
 
         today = datetime.today().date()
-        if today == end_date.today().date():
-            scores.insert((0,
-                           f"⚠️⚠️⚠️ВНИМАНИЕ!!!⚠️⚠️⚠️\n🖊🖊Последний день месяца! Эту таблицу надо сохранить🖊🖊\nДанные за {end_date}\n"))
+        if today == end_date.date():
+            scores.insert(0,
+                           f"⚠️⚠️⚠️ВНИМАНИЕ!!!⚠️⚠️⚠️\n🖊Последний день месяца! Эту таблицу надо сохранить🖊\nДанные за {end_date}\n")
         else:
-            scores.insert(0, f"\nСписок всех купонов за текущий месяц:\n")
+            scores.insert(0, f"\n🗡Список всех купонов за текущий месяц:🗡\n")
 
         return f"\n{'-' * 30}\n".join(scores)
 
@@ -306,3 +307,103 @@ class PlayerScoreService:
 
         scores.insert(0, f"\nСписок не сдавших 600 энки на {local_time_str} по {os.environ.get('TZ_SUFFIX')}\n")
         return f"\n{'-' * 30}\n".join(scores)
+
+
+class PlayerPowerService:
+    @staticmethod
+    async def get_galactic_power_all():
+        """Возвращает строку из списка всей галактической мощи игроков за месяц"""
+        all_players = await PlayerScoreService.get_all_players()
+        if not all_players:
+            return "Нет данных об игроках."
+        now = datetime.now()
+        start_date = datetime(now.year, now.month, 1)
+        if now.month == 12:
+            end_date = datetime(now.year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = datetime(now.year, now.month + 1, 1) - timedelta(days=1)
+
+        # Get the players for the start of the month
+        start_month_players = await PlayerPowerService.get_players_for_date(start_date)
+        if not start_month_players:
+            # If we don't have data for the start of the month, get the next available date
+            next_available_date = await PlayerPowerService.get_next_available_date(start_date)
+            start_month_players = await PlayerPowerService.get_players_for_date(next_available_date)
+
+        # Get the players for the current date
+        current_players = await PlayerPowerService.get_players_for_date(now.date())
+
+        start_month_powers = PlayerPowerService.get_powers(start_month_players)
+        current_powers = PlayerPowerService.get_powers(current_players)
+
+        power_diffs, total_diff = PlayerPowerService.get_power_diffs(start_month_powers, current_powers)
+
+        powers = await format_scores(power_diffs, filter_points=None, total=False, powers=True)
+        powers.append(
+            f"Общая разница в галактической мощи\nот {start_date.strftime('%d.%m.%y')} до {now.strftime('%d.%m.%y')}:    {total_diff}")
+
+        today = datetime.today().date()
+        if today == end_date.date():
+            powers.insert(0,
+                          f"⚠️⚠️⚠️ВНИМАНИЕ!!!⚠️⚠️⚠️\n🖊🖊Последний день месяца! Эту таблицу надо сохранить🖊🖊\nДанные за {end_date}\n")
+        else:
+            powers.insert(0, f"\n⚔️Список изменения галактической мощи за месяц:⚔️\n")
+
+        return f"\n{'-' * 30}\n".join(powers)
+
+    @staticmethod
+    async def get_players_for_date(date):
+        """Get all player data for a specific date"""
+        async with async_session_maker() as session:  # открываем асинхронную сессию
+            query = await session.execute(
+                select(Player).filter(
+                    func.date(Player.update_time) == date
+                )
+            )
+        return query.scalars().all()
+
+    @staticmethod
+    async def get_next_available_date(start_date):
+        """Get the next available date with data after the start date"""
+        async with async_session_maker() as session:  # открываем асинхронную сессию
+            query = await session.execute(
+                select(func.min(Player.update_time)).filter(
+                    func.date(Player.update_time) > start_date
+                )
+            )
+        next_available_date = query.scalar_one()
+        return next_available_date.date() if next_available_date else None
+
+    @staticmethod
+    def get_powers(players):
+        # Создаем словарь, где будем сохранять мощь
+        player_powers = {}
+
+        # Проходим по всем записям и сохраняем силу
+        for player in players:
+            # Проверяем, является ли galactic_power строкой и преобразовываем ее в int, если это так
+            galactic_power = int(player.galactic_power) if isinstance(player.galactic_power,
+                                                                      str) else player.galactic_power
+
+            player_powers[player.name] = galactic_power
+
+        return player_powers
+
+    @staticmethod
+    def get_power_diffs(start_month_powers, current_powers):
+        # Создаем словарь, где будем суммировать разницу в мощи
+        power_diffs = {}
+
+        # Это переменная для подсчета общей разницы в галактической силе
+        total_diff = 0
+
+        # Проходим по всем записям и считаем разницу в мощи
+        for player_name, start_month_power in start_month_powers.items():
+            current_power = current_powers.get(player_name, start_month_power)
+            diff = current_power - start_month_power
+
+            power_diffs[player_name] = diff
+            total_diff += diff
+
+        return sorted(power_diffs.items(), key=lambda x: x[1], reverse=True), total_diff
+

@@ -54,16 +54,6 @@ async def command_db_extra(message: types.Message):
             await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
-# async def add_player(message: types.Message):
-#     """Добавляет игрока в ids.json"""
-#     is_guild_member = message.conf.get('is_guild_member', False)
-#     if is_guild_member:
-#         try:
-#             await add_player_to_ids(message)
-#         except Exception as e:
-#             await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
-
 async def players_list(message: types.Message):
     """Отправляет содержимое файла ids.json в чат"""
     is_guild_member = message.conf.get('is_guild_member', False)
@@ -133,15 +123,14 @@ async def send_year_guild_grafic(message: types.Message):
 async def check_ids(message: types.Message):
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
-        # try:
-        await check_guild_players(message)
-    # except Exception as e:
-    #     await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+        try:
+            await check_guild_players(message)
+        except Exception as e:
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(command_db_extra, commands=['refresh'], is_chat_admin=True)
-    # dp.register_message_handler(add_player, commands=['add_player'], is_chat_admin=True)
     dp.register_message_handler(players_list, commands=['players_list'], is_chat_admin=True)
     dp.register_message_handler(delete_player, commands=['delete_player'], is_chat_admin=True)
     dp.register_message_handler(admin_command_help, commands=['admin'], is_chat_admin=True)
