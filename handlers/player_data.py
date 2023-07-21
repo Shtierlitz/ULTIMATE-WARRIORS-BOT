@@ -95,9 +95,15 @@ async def player_data_info(message: types.Message, state: FSMContext):
     }
 
     if key in graphic_keys:
-        func, args = graphic_keys[key]
-        image = await func(*args)
-        return await bot.send_photo(chat_id=message.chat.id, photo=image)
+        try:
+            func, args = graphic_keys[key]
+            image = await func(*args)
+            return await bot.send_photo(chat_id=message.chat.id, photo=image)
+        except Exception as e:
+            return await message.reply(f"Произошла ошибка при построении графика: \n\n❌❌{e}❌❌\n\n"
+                                       f"Возможно у вас просто первый день и данных езе нет в базе за 2-3 дня хотябы.\n"
+                                       f"Если это так, то просто подождите пару дней.")
+
 
     if key in player.__dict__:
         player_data = player.__dict__[key]

@@ -8,7 +8,7 @@ from typing import Tuple
 import aiohttp
 import pytz
 from datetime import datetime, timedelta, time
-from aiogram import types
+from aiogram import types, Bot
 from sqlalchemy import select
 
 from create_bot import bot
@@ -338,3 +338,8 @@ async def get_end_date():
     else:
         end = datetime(now.year, now.month + 1, 1, now.hour, now.minute) - timedelta(days=1)
     return end
+
+
+async def is_admin(bot: Bot, user: types.User, chat: types.Chat) -> bool:
+    member = await bot.get_chat_member(chat.id, user.id)
+    return member.is_chat_admin() or member.is_chat_creator()
