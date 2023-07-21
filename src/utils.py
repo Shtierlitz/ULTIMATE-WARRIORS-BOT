@@ -116,7 +116,8 @@ async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
     """Добавляет запись о пользователе в ids.json"""
 
     # имя игрока, код и ID телеграма и ник в телеграме
-    player_name, ally_code, tg_id, tg_nic = new_data['player_name'], new_data["ally_code"], new_data['tg_id'], new_data['tg_nic']
+    player_name, ally_code, tg_id, tg_nic = new_data['player_name'], new_data["ally_code"], new_data['tg_id'], new_data[
+        'tg_nic']
 
     file_path = os.path.join(os.path.dirname(__file__), '..', os.environ.get("IDS_JSON"))
     if os.path.exists(file_path):
@@ -328,3 +329,12 @@ async def get_player_by_name_or_nic(player_name: str) -> Player:
             )
             player = query.scalars().first()
         return player
+
+
+async def get_end_date():
+    now = get_new_day_start()
+    if now.month == 12:
+        end = datetime(now.year + 1, 1, 1, now.hour, now.minute) - timedelta(days=1)
+    else:
+        end = datetime(now.year, now.month + 1, 1, now.hour, now.minute) - timedelta(days=1)
+    return end

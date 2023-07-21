@@ -29,6 +29,9 @@ async def on_startup(_):  # функция настроек старта бот�
     scheduler.add_job(apsched.final_points_per_month, 'cron',
                       hour=int(os.environ.get("REMIND_LAST_MONTH_POINTS_HOUR", 16)),
                       minute=int(os.environ.get("REMIND_LAST_MONTH_POINTS_MINUTES", 25)))
+    scheduler.add_job(apsched.final_gp_per_month, 'cron',
+                      hour=int(os.environ.get("REMIND_LAST_MONTH_POINTS_HOUR", 16)),
+                      minute=int(os.environ.get("REMIND_LAST_MONTH_POINTS_MINUTES", 25)))
 
     scheduler.start()
 

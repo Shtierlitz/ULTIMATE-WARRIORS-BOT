@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 from settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
-from src.utils import get_new_day_start, format_scores, get_localized_datetime
+from src.utils import get_new_day_start, format_scores, get_localized_datetime, get_end_date
 from sqlalchemy import select, delete, func, text
 
 load_dotenv()
@@ -103,7 +103,7 @@ class PlayerData:
         player.player_id = data['playerId']
         player.arena_rank = data['comlink_arena_rank']
         player.fleet_arena_rank = data['comlink_fleet_arena_rank']
-        player.galactic_power = data['galactic_power']
+        player.galactic_power = data['comlink_galactic_power']
         player.character_galactic_power = data['character_galactic_power']
         player.ship_galactic_power = data['ship_galactic_power']
         player.guild_join_time = datetime.strptime(data['guild_join_time'], "%Y-%m-%dT%H:%M:%S")
@@ -151,6 +151,7 @@ class PlayerData:
                 raw_data = await comlink_request.json()
 
         guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
+        galactic_power_dict = {player: int(data['galacticPower']) for player, data in guild_data_dict.items()}
         for i in data['data']['members']:
             if str(i['ally_code']) in existing_players:
                 final_data: dict = await self.get_swgoh_player_data(i['ally_code'])
@@ -172,6 +173,7 @@ class PlayerData:
                 final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
                 final_data.update({'comlink_arena_rank': comlink_data['pvpProfile'][0]['rank']})
                 final_data.update({'comlink_fleet_arena_rank': comlink_data['pvpProfile'][1]['rank']})
+                final_data.update({'comlink_galactic_power': galactic_power_dict[comlink_data['name']]})
                 try:
                     member_contribution_dict = {item['type']: item['currentValue'] for item in
                                                 guild_data_dict[comlink_data['name']]['memberContribution']}
@@ -261,10 +263,7 @@ class PlayerScoreService:
             return "Нет данных об игроках."
         now = datetime.now()
         start_date = datetime(now.year, now.month, 1)
-        if now.month == 12:
-            end_date = datetime(now.year + 1, 1, 1) - timedelta(days=1)
-        else:
-            end_date = datetime(now.year, now.month + 1, 1) - timedelta(days=1)
+        end_date = await get_end_date()
         async with async_session_maker() as session:  # открываем асинхронную сессию
             query = await session.execute(
                 select(Player).filter(
@@ -309,6 +308,9 @@ class PlayerScoreService:
         return f"\n{'-' * 30}\n".join(scores)
 
 
+
+
+
 class PlayerPowerService:
     @staticmethod
     async def get_galactic_power_all():
@@ -316,26 +318,16 @@ class PlayerPowerService:
         all_players = await PlayerScoreService.get_all_players()
         if not all_players:
             return "Нет данных об игроках."
-        now = datetime.now()
+        now = get_new_day_start()
         start_date = datetime(now.year, now.month, 1)
-        if now.month == 12:
-            end_date = datetime(now.year + 1, 1, 1) - timedelta(days=1)
-        else:
-            end_date = datetime(now.year, now.month + 1, 1) - timedelta(days=1)
+        end_date = await get_end_date()
 
         # Get the players for the start of the month
-        start_month_players = await PlayerPowerService.get_players_for_date(start_date)
-        if not start_month_players:
-            # If we don't have data for the start of the month, get the next available date
-            next_available_date = await PlayerPowerService.get_next_available_date(start_date)
-            start_month_players = await PlayerPowerService.get_players_for_date(next_available_date)
-
+        start_month_players = await PlayerPowerService.get_players_for_first_available_date_in_month(start_date)
         # Get the players for the current date
-        current_players = await PlayerPowerService.get_players_for_date(now.date())
-
+        current_players = await PlayerPowerService.get_players_for_date(now)
         start_month_powers = PlayerPowerService.get_powers(start_month_players)
         current_powers = PlayerPowerService.get_powers(current_players)
-
         power_diffs, total_diff = PlayerPowerService.get_power_diffs(start_month_powers, current_powers)
 
         powers = await format_scores(power_diffs, filter_points=None, total=False, powers=True)
@@ -354,25 +346,30 @@ class PlayerPowerService:
     @staticmethod
     async def get_players_for_date(date):
         """Get all player data for a specific date"""
+        start_date_time = datetime.combine(date, time(16, 30))
+        end_date_time = datetime.combine(date + timedelta(days=1), time(16, 30))
         async with async_session_maker() as session:  # открываем асинхронную сессию
             query = await session.execute(
                 select(Player).filter(
-                    func.date(Player.update_time) == date
+                    Player.update_time >= start_date_time,
+                    Player.update_time < end_date_time
                 )
             )
         return query.scalars().all()
 
     @staticmethod
-    async def get_next_available_date(start_date):
-        """Get the next available date with data after the start date"""
+    async def get_players_for_first_available_date_in_month(date):
+        """Get all player data for the first available date in the month"""
+        start_date_time = datetime.combine(date, time(16, 30))
+        end_date_time = datetime.combine(datetime.now(), time(16, 30))
         async with async_session_maker() as session:  # открываем асинхронную сессию
             query = await session.execute(
-                select(func.min(Player.update_time)).filter(
-                    func.date(Player.update_time) > start_date
-                )
+                select(Player).filter(
+                    Player.update_time >= start_date_time,
+                    Player.update_time < end_date_time
+                ).order_by(Player.update_time)
             )
-        next_available_date = query.scalar_one()
-        return next_available_date.date() if next_available_date else None
+        return query.scalars().all()
 
     @staticmethod
     def get_powers(players):
@@ -399,11 +396,15 @@ class PlayerPowerService:
 
         # Проходим по всем записям и считаем разницу в мощи
         for player_name, start_month_power in start_month_powers.items():
-            current_power = current_powers.get(player_name, start_month_power)
+            if player_name not in current_powers:
+                continue
+            current_power = current_powers[player_name]
             diff = current_power - start_month_power
 
             power_diffs[player_name] = diff
             total_diff += diff
 
         return sorted(power_diffs.items(), key=lambda x: x[1], reverse=True), total_diff
+
+
 
