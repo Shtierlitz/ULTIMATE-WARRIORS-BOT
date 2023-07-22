@@ -17,16 +17,18 @@ async def create_keyboard():
 
     async with async_session_maker() as session:
         query = await session.execute(
-            select(Player.name).filter(Player.update_time >= new_day_start)
+            select(Player).filter(Player.update_time >= new_day_start)
         )
         players = query.scalars().all()
 
+
+
     if players:
-        keyboard.row(KeyboardButton("cancel"))
+        keyboard.row(KeyboardButton("Отмена❌"))
 
         row_btns = []  # Создать список для кнопок строк
-        for index, player in enumerate(players):
-            button = KeyboardButton(player)  # Создать кнопку с именем игрока
+        for index, player in enumerate(sorted(players, key=lambda p: p.name)):
+            button = KeyboardButton(player.name)  # Создать кнопку с именем игрока
             row_btns.append(button)
             if (index + 1) % 2 == 0:  # Если это каждая 2-ая кнопка
                 keyboard.row(*row_btns)  # Добавить ряд кнопок на клавиатуру
@@ -45,25 +47,25 @@ async def create_player_info_keyboard(player_name: str):
     player = await get_player_by_name_or_nic(player_name)
 
     if player:
-        keyboard.row(KeyboardButton("back"), KeyboardButton("cencel")) # Создать отдельную строку для кнопки "cencel"
-        keyboard.row(KeyboardButton("all_data"))
-        keyboard.row(KeyboardButton("GP_month"), KeyboardButton("GP_year"))
-        keyboard.row(KeyboardButton("arena_graphic_month"), KeyboardButton("fleet_arena_graphic_month"))
-        keyboard.row(KeyboardButton("arena_graphic_year"), KeyboardButton("fleet_arena_graphic_year"))
+        keyboard.row(KeyboardButton("🔙Назад"), KeyboardButton("Отмена❌")) # Создать отдельную строку для кнопки "cencel"
+        keyboard.row(KeyboardButton("🗒Все данные"))
+        keyboard.row(KeyboardButton("📊 ГМ за месяц"), KeyboardButton("📊 ГМ за год"))
+        keyboard.row(KeyboardButton("📊 пешки за месяц"), KeyboardButton("📊 флота за месяц"))
+        keyboard.row(KeyboardButton("📊 пешки за год"), KeyboardButton("📊 флота за год"))
 
-        row_btns = []  # Создать список для кнопок строк
-
-        for index, column in enumerate(Player.__table__.columns):  # Получить все поля модели Player
-            if column.name in ('name', 'tg_id', 'id'):  # Если имя поля 'tg_id', пропустите его
-                continue
-            button = KeyboardButton(column.name)  # Создать кнопку с именем поля
-            row_btns.append(button)
-            if (index + 1) % 2 == 0:  # Если это каждая 4-ая кнопка
-                keyboard.row(*row_btns)  # Добавить ряд кнопок на клавиатуру
-                row_btns = []  # Очистить список кнопок для следующего ряда
-
-        if row_btns:  # Если есть оставшиеся кнопки
-            keyboard.row(*row_btns)  # Добавить оставшиеся кнопки на клавиатуру
+        # row_btns = []  # Создать список для кнопок строк
+        #
+        # for index, column in enumerate(Player.__table__.columns):  # Получить все поля модели Player
+        #     if column.name in ('name', 'tg_id', 'id'):  # Если имя поля 'tg_id', пропустите его
+        #         continue
+        #     button = KeyboardButton(column.name)  # Создать кнопку с именем поля
+        #     row_btns.append(button)
+        #     if (index + 1) % 2 == 0:  # Если это каждая 4-ая кнопка
+        #         keyboard.row(*row_btns)  # Добавить ряд кнопок на клавиатуру
+        #         row_btns = []  # Очистить список кнопок для следующего ряда
+        #
+        # if row_btns:  # Если есть оставшиеся кнопки
+        #     keyboard.row(*row_btns)  # Добавить оставшиеся кнопки на клавиатуру
 
     return keyboard
 

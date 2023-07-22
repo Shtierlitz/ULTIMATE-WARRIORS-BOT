@@ -27,7 +27,7 @@ class PlayerState(StatesGroup):
 async def cancel_handler(message: types.Message, state: FSMContext):
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
-        if message.text == 'cencel':
+        if message.text == 'Отмена❌':
             await state.reset_state()
             await message.answer('Отменено', reply_markup=types.ReplyKeyboardRemove())
 
@@ -46,10 +46,10 @@ async def player_info_buttons(message: types.Message, state: FSMContext):
     """Открывает панель кнопок с инфой об игроке"""
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
-        if message.text == 'cencel':
+        if message.text == 'Отмена❌':
             return await cancel_handler(message, state)
         player_name = message.text
-        if player_name == 'back':
+        if player_name == '🔙Назад':
             await back_handler(message, state)
         if player_name.startswith("@"):
             player_name = player_name.replace("@", "")
@@ -71,7 +71,7 @@ async def player_info_buttons(message: types.Message, state: FSMContext):
 async def player_data_info(message: types.Message, state: FSMContext):
     """Возвращает выбранные данные по игроку"""
     is_guild_member = message.conf.get('is_guild_member', False)
-    if not is_guild_member or message.text == 'cancel':
+    if not is_guild_member or message.text == 'Отмена❌':
         return await cancel_handler(message, state)
 
     data = await state.get_data()
@@ -82,16 +82,16 @@ async def player_data_info(message: types.Message, state: FSMContext):
         return await cancel_handler(message, state)
 
     key = message.text
-    if key == 'back':
+    if key == '🔙Назад':
         return await back_handler(message, state)
 
     graphic_keys = {
-        "GP_month": (get_player_gp_graphic, (player.name, 'month')),
-        "GP_year": (get_player_gp_graphic, (player.name, 'year')),
-        "arena_graphic_month": (get_player_rank_graphic, (player.name, 'month', False)),
-        "fleet_arena_graphic_month": (get_player_rank_graphic, (player.name, 'month', True)),
-        "arena_graphic_year": (get_player_rank_graphic, (player.name, 'year', False)),
-        "fleet_arena_graphic_year": (get_player_rank_graphic, (player.name, 'year', True)),
+        "📊 ГМ за месяц": (get_player_gp_graphic, (player.name, 'month')),
+        "📊 ГМ за год": (get_player_gp_graphic, (player.name, 'year')),
+        "📊 пешки за месяц": (get_player_rank_graphic, (player.name, 'month', False)),
+        "📊 флота за месяц": (get_player_rank_graphic, (player.name, 'month', True)),
+        "📊 пешки за год": (get_player_rank_graphic, (player.name, 'year', False)),
+        "📊 флота за год": (get_player_rank_graphic, (player.name, 'year', True)),
     }
 
     if key in graphic_keys:
@@ -103,13 +103,13 @@ async def player_data_info(message: types.Message, state: FSMContext):
             return await message.reply(f"Произошла ошибка при построении графика: \n\n❌❌{e}❌❌\n\n"
                                        f"Возможно у вас просто первый день и данных езе нет в базе за 2-3 дня хотябы.\n"
                                        f"Если это так, то просто подождите пару дней.")
-    if key == 'all_data':
+    if key == '🗒Все данные':
         all_data = await PlayerData().extract_data(player)
         return await message.reply(all_data)
 
-    if key in player.__dict__:
-        player_data = player.__dict__[key]
-        return await message.reply(f"Данные {key} о пользователе {player.name}:\n{player_data}")
+    # if key in player.__dict__:
+    #     player_data = player.__dict__[key]
+    #     return await message.reply(f"Данные {key} о пользователе {player.name}:\n{player_data}")
 
     # Если ввод не является командой и не соответствует атрибутам игрока
     await state.reset_state()
@@ -123,8 +123,8 @@ async def default_state_handler(message: types.Message, state: FSMContext):
     if is_guild_member:
 
         valid_commands = [column.name for column in Player.__table__.columns]
-        valid_commands.append('cencel')
-        valid_commands.append('all_data')
+        valid_commands.append('🔙Назад')
+        valid_commands.append('Все данные')
 
         if message.text not in valid_commands:
             await state.reset_state()
