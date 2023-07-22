@@ -26,6 +26,8 @@ from sqlalchemy import select, delete, func, text
 
 load_dotenv()
 
+HOURS, MINUTES = int(os.environ.get('DAY_UPDATE_HOUR', 16)), int(os.environ.get('DAY_UPDATE_MINUTES', 30))
+
 # utc_tz = timezone('UTC')
 #
 # tz = str(os.environ.get("TIME_ZONE"))
@@ -152,45 +154,49 @@ class PlayerData:
 
         guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
         galactic_power_dict = {player: int(data['galacticPower']) for player, data in guild_data_dict.items()}
-        for i in data['data']['members']:
-            if str(i['ally_code']) in existing_players:
-                final_data: dict = await self.get_swgoh_player_data(i['ally_code'])
-                final_data.update({'guild_join_time': i['guild_join_time']})
-                final_data.update({'existing_player': existing_players[str(i['ally_code'])]})
-                # try:
-                post_data = {
-                    "payload": {
-                        "allyCode": f"{i['ally_code']}"
-                    },
-                    "enums": False
-                }
-                comlink_player_request = requests.post(f"{API_LINK}/player", json=post_data)
-                comlink_player_request.raise_for_status()
-                comlink_data = comlink_player_request.json()
-                final_data.update({'name': comlink_data['name']})
-                final_data.update({'level': comlink_data['level']})
-                final_data.update({'playerId': comlink_data['playerId']})
-                final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
-                final_data.update({'comlink_arena_rank': comlink_data['pvpProfile'][0]['rank']})
-                final_data.update({'comlink_fleet_arena_rank': comlink_data['pvpProfile'][1]['rank']})
-                final_data.update({'comlink_galactic_power': galactic_power_dict[comlink_data['name']]})
-                try:
-                    member_contribution_dict = {item['type']: item['currentValue'] for item in
-                                                guild_data_dict[comlink_data['name']]['memberContribution']}
-                    final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
+        try:
+            for i in data['data']['members']:
+                if str(i['ally_code']) in existing_players:
+                    final_data: dict = await self.get_swgoh_player_data(i['ally_code'])
+                    final_data.update({'guild_join_time': i['guild_join_time']})
+                    final_data.update({'existing_player': existing_players[str(i['ally_code'])]})
+                    # try:
+                    post_data = {
+                        "payload": {
+                            "allyCode": f"{i['ally_code']}"
+                        },
+                        "enums": False
+                    }
+                    comlink_player_request = requests.post(f"{API_LINK}/player", json=post_data)
+                    comlink_player_request.raise_for_status()
+                    comlink_data = comlink_player_request.json()
+                    final_data.update({'name': comlink_data['name']})
+                    final_data.update({'level': comlink_data['level']})
+                    final_data.update({'playerId': comlink_data['playerId']})
+                    final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
+                    final_data.update({'comlink_arena_rank': comlink_data['pvpProfile'][0]['rank']})
+                    final_data.update({'comlink_fleet_arena_rank': comlink_data['pvpProfile'][1]['rank']})
+                    final_data.update({'comlink_galactic_power': galactic_power_dict[comlink_data['name']]})
+                    try:
+                        member_contribution_dict = {item['type']: item['currentValue'] for item in
+                                                    guild_data_dict[comlink_data['name']]['memberContribution']}
+                        final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
 
-                    final_data.update({'reid_points': member_contribution_dict[2]})
-                    final_data.update({'guild_points': member_contribution_dict[1]})
-                except KeyError:
-                    message = f"Игрок {i['player_name']} удален из гильдии. Обновите ids.json. Сотрите малейшие воспоминания об этом непотребстве!"
+                        final_data.update({'reid_points': member_contribution_dict[2]})
+                        final_data.update({'guild_points': member_contribution_dict[1]})
+                    except KeyError:
+                        message = f"Игрок {i['player_name']} удален из гильдии. Обновите ids.json. Сотрите малейшие воспоминания об этом непотребстве!"
+                        error_list.append(message)
+                        await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message)
+                        continue
+                    await self.create_or_update_player_data(final_data)
+
+                else:
+                    message = f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json и дождитесь обновления swgoh.gg"
                     error_list.append(message)
-                    await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message)
-                    continue
-                await self.create_or_update_player_data(final_data)
-
-            else:
-                message = f"Игрок {i['player_name']} отсутствует в гильдии. Обновите ids.json и дождитесь обновления swgoh.gg"
-                error_list.append(message)
+        except Exception as e:
+            message = f"❌❌Произошла ошибка при парсинге API в классе Player❌❌\n\n{e}"
+            await bot.send_message(int(os.environ.get('MY_ID')), message)
 
         print("\n".join(error_list))
         print("Данные игроков в базе обновлены.")
@@ -198,10 +204,44 @@ class PlayerData:
     async def extract_data(self, player: Player):
         """Выводит все данные по игроку в виде строки"""
         data_dict = player.__dict__
-        formatted_string = "\n".join(
-            f"{key}: {value}\n{'-' * 30}" for key, value in data_dict.items() if
-            not key.startswith('_') and key not in ('id', 'tg_id'))
-        return formatted_string
+        # для отладки
+        # for key, value in data_dict.items():
+        #     print(key, value)
+        output_structure = [
+            {"description": "Имя аккаунта", "value": data_dict['name']},
+            {"description": "Код союзника", "value": data_dict['ally_code']},
+            {"description": "Последняя активность", "value": data_dict['lastActivityTime']},
+            {"description": "Уровень", "value": data_dict['level']},
+            {"description": "Ссылка на swgoh", "value": data_dict['url']},
+            {"description": "Ник в телеграме", "value": f"@{data_dict['tg_nic']}"},
+            {"description": "Галактическая мощь", "value": data_dict['galactic_power']},
+            {"description": "Сданых купонов за день", "value": data_dict['reid_points']},
+            {"description": "Ранг на пешей арене", "value": data_dict['arena_rank']},
+            {"description": "Ранг на арене флота", "value": data_dict['fleet_arena_rank']},
+            {"description": "Всего пожертвованных деталей", "value": data_dict['guild_exchange_donations']},
+            {"description": "Галактическая мощь пешки (swgoh)", "value": data_dict['character_galactic_power']},
+            {"description": "Галактическая мощь флота (swgoh)", "value": data_dict['ship_galactic_power']},
+            {"description": "PVP побед", "value": data_dict['pvp_battles_won']},
+            {"description": "PVE побед простых", "value": data_dict['pve_battles_won']},
+            {"description": "PVE побед сложных", "value": data_dict['pve_hard_won']},
+            {"description": "Побед на Галактических Войнах", "value": data_dict['galactic_war_won']},
+            {"description": "Статус сезона", "value": data_dict['season_status']},
+            {"description": "Зачищенных територий в сезоне", "value": data_dict['season_territories_defeated']},
+            {"description": "Полных зачисток в сезоне", "value": data_dict['season_full_clears']},
+            {"description": "Успешных оборонительных битв в сезоне", "value": data_dict['season_successful_defends']},
+            {"description": "Успешных атак в сезоне", "value": data_dict['season_offensive_battles_won']},
+            {"description": "Очков лиги в сезоне", "value": data_dict['season_league_score']},
+            {"description": "Повышений в сезоне", "value": data_dict['season_promotions_earned']},
+            {"description": "Ссылка на swgoh", "value": data_dict['url']},
+            {"description": "Последнее обновление базы", "value": data_dict['update_time'].strftime('%d.%m.%y : %H.%M')},
+            {"description": "Последнее обновление на swgoh", "value": data_dict['last_swgoh_updated'].strftime('%d.%m.%y : %H.%M')}
+            ]
+
+        new_string = "👀Полные данные об игроке👀\n\n"
+        for item in output_structure:
+            new_string += f"{item['description']}: {item['value']}\n{'-' * 30}\n"
+
+        return new_string
 
 
 class PlayerScoreService:
@@ -251,7 +291,7 @@ class PlayerScoreService:
         scores = await format_scores(sorted_scores, filter_points=None)
         scores.insert(0,
                       f"\nСписок купонов за день\nОбновление дня в"
-                      f" {os.environ.get('DAY_UPDATE_HOUR')}:{os.environ.get('DAY_UPDATE_MINUTES')}"
+                      f" {HOURS}:{MINUTES}"
                       f" по {os.environ.get('TZ_SUFFIX')}\n")
         return f"\n{'-' * 30}\n".join(scores)
 
@@ -280,7 +320,7 @@ class PlayerScoreService:
         today = datetime.today().date()
         if today == end_date.date():
             scores.insert(0,
-                           f"⚠️⚠️⚠️ВНИМАНИЕ!!!⚠️⚠️⚠️\n🖊Последний день месяца! Эту таблицу надо сохранить🖊\nДанные за {end_date}\n")
+                          f"⚠️⚠️⚠️ВНИМАНИЕ!!!⚠️⚠️⚠️\n🖊Последний день месяца! Эту таблицу надо сохранить🖊\nДанные за {end_date}\n")
         else:
             scores.insert(0, f"\n🗡Список всех купонов за текущий месяц:🗡\n")
 
@@ -308,9 +348,6 @@ class PlayerScoreService:
         return f"\n{'-' * 30}\n".join(scores)
 
 
-
-
-
 class PlayerPowerService:
     @staticmethod
     async def get_galactic_power_all():
@@ -324,15 +361,26 @@ class PlayerPowerService:
 
         # Get the players for the start of the month
         start_month_players = await PlayerPowerService.get_players_for_first_available_date_in_month(start_date)
+
         # Get the players for the current date
         current_players = await PlayerPowerService.get_players_for_date(now)
+
+        # для тестирования
+        # start_month_players_sorted = sorted(start_month_players, key=lambda player: player.galactic_power)
+        # print([[i.name, i.galactic_power] for i in start_month_players_sorted])
+        # current_players_sorted = sorted(current_players, key=lambda player: player.galactic_power)  # Сортировка по galactic_power
+        # print([[i.name, i.galactic_power] for i in current_players_sorted])
+
         start_month_powers = PlayerPowerService.get_powers(start_month_players)
         current_powers = PlayerPowerService.get_powers(current_players)
         power_diffs, total_diff = PlayerPowerService.get_power_diffs(start_month_powers, current_powers)
 
         powers = await format_scores(power_diffs, filter_points=None, total=False, powers=True)
+
+        if now.time() < time(HOURS, MINUTES):
+            now -= timedelta(days=1)
         powers.append(
-            f"Общая разница в галактической мощи\nот {start_date.strftime('%d.%m.%y')} до {now.strftime('%d.%m.%y')}:    {total_diff}")
+            f"Общая разница в галактической мощи\nот {(start_month_players[0].update_time - timedelta(days=1)).strftime('%d.%m.%y')} до {now.strftime('%d.%m.%y')}:    {total_diff}")
 
         today = datetime.today().date()
         if today == end_date.date():
@@ -346,8 +394,8 @@ class PlayerPowerService:
     @staticmethod
     async def get_players_for_date(date):
         """Get all player data for a specific date"""
-        start_date_time = datetime.combine(date, time(16, 30))
-        end_date_time = datetime.combine(date + timedelta(days=1), time(16, 30))
+        start_date_time = datetime.combine(date, time(HOURS, MINUTES))
+        end_date_time = datetime.combine(date + timedelta(days=1), time(HOURS, MINUTES))
         async with async_session_maker() as session:  # открываем асинхронную сессию
             query = await session.execute(
                 select(Player).filter(
@@ -360,16 +408,38 @@ class PlayerPowerService:
     @staticmethod
     async def get_players_for_first_available_date_in_month(date):
         """Get all player data for the first available date in the month"""
-        start_date_time = datetime.combine(date, time(16, 30))
-        end_date_time = datetime.combine(datetime.now(), time(16, 30))
         async with async_session_maker() as session:  # открываем асинхронную сессию
-            query = await session.execute(
-                select(Player).filter(
-                    Player.update_time >= start_date_time,
-                    Player.update_time < end_date_time
-                ).order_by(Player.update_time)
+            first_date_of_month = date.replace(day=1)
+            first_date_time = datetime.combine(first_date_of_month, time(HOURS, MINUTES))
+
+            # Check if there are any records for the first day of the month
+            result = await session.execute(
+                select(func.count()).where(
+                    func.DATE(Player.update_time) == func.DATE(first_date_time)
+                )
             )
-        return query.scalars().all()
+            count = result.scalar_one()
+
+            if count > 0:
+                # If there are records for the first day of the month, use them
+                query = await session.execute(
+                    select(Player).where(
+                        func.DATE(Player.update_time) == func.DATE(first_date_time)
+                    )
+                )
+            else:
+                # If there are no records for the first day of the month, use the minimum date
+                result = await session.execute(
+                    select(func.min(Player.update_time))
+                )
+                min_date = result.scalar_one()
+                query = await session.execute(
+                    select(Player).where(
+                        func.DATE(Player.update_time) == func.DATE(min_date)
+                    )
+                )
+            players = query.scalars().all()
+        return players
 
     @staticmethod
     def get_powers(players):
@@ -405,6 +475,3 @@ class PlayerPowerService:
             total_diff += diff
 
         return sorted(power_diffs.items(), key=lambda x: x[1], reverse=True), total_diff
-
-
-

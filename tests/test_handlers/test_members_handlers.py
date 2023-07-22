@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from handlers.member import command_start, COMMANDS, command_gac_statistic
+from handlers.member import command_start, COMMANDS, command_gac_statistic, get_raid_points
 from unittest.mock import AsyncMock, call
 from dotenv import load_dotenv
 from pathlib import Path
@@ -34,6 +34,41 @@ async def test_start_behavior():
         call(message.chat.id, "Начинаем работу."),
         call(message.chat.id, f"Список доступных команд:\n\n{commands}")
     ], any_order=True)
+
+
+@pytest.mark.asyncio
+async def test_get_raid_points():
+    bot = AsyncMock()
+
+    # Создаем сообщение
+    message = AsyncMock()
+    message.conf = {"is_guild_member": True}
+    message.chat.id = os.environ.get('MY_ID')
+    message.reply = AsyncMock()
+
+    # Заменяем bot внутри функции на нашу подделку
+    get_raid_points.__globals__["bot"] = bot
+
+    # Мокаем PlayerScoreService.get_raid_scores
+    PlayerScoreService = AsyncMock()
+    PlayerScoreService.get_raid_scores = AsyncMock(return_value="test_string")
+    get_raid_points.__globals__["PlayerScoreService"] = PlayerScoreService
+
+    await get_raid_points(message)
+    bot.send_message.assert_has_calls([
+        call(message.chat.id, "test_string")
+    ], any_order=True)
+
+
+@pytest.mark.asyncio
+async def test_start_behavior_not_guild_member():
+    bot = AsyncMock()
+    message = AsyncMock()
+    message.conf = {"is_guild_member": False}
+    message.chat.id = os.environ.get('MY_ID')
+    command_start.__globals__["bot"] = bot
+    await command_start(message)
+    bot.send_message.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -89,6 +124,30 @@ async def test_gac_statistic():
         call(message.chat.id, text="stat4", parse_mode="Markdown"),
         call(message.chat.id, text="stat5", parse_mode="Markdown"),
     ], any_order=False)  # порядок важен
+
+
+
+
+@pytest.mark.asyncio
+async def test_gac_statistic_not_guild_member():
+    bot = AsyncMock()
+    message = AsyncMock()
+    message.conf = {"is_guild_member": False}
+    message.chat.id = os.environ.get('MY_ID')
+    command_start.__globals__["bot"] = bot
+    await command_gac_statistic(message)
+    bot.send_message.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_user_data_not_guild_member():
+    bot = AsyncMock()
+    message = AsyncMock()
+    message.conf = {"is_guild_member": False}
+    message.chat.id = os.environ.get('MY_ID')
+    command_start.__globals__["bot"] = bot
+    await get_user_data(message)
+    bot.send_message.assert_not_called()
 
 
 @pytest.mark.asyncio
