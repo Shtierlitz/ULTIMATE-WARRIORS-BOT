@@ -19,7 +19,7 @@ COMMANDS = {
     "add_player": "Сиквенция для записи нового игрока в базу.\nЕсли нету тг ID или tg_nic то вместо пишите исключительно - null",
     "players_list": "Вывести все записи по игрокам (не стоит использовать в общих чатах)",
     "delete_player": "Удалить игрока из базы по имени",
-    "graphic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц",
+    # "graphic имя_игрока": "Выводит график сдачи игроком рейдовых купонов за все месяц",
     "guild_month": "Выводит график росто ГМ гильдии за месяц",
     "guild_year": "Выводит график роста ГМ гильдии за год",
     "refresh": "Экстреннее обновление базы данных",
@@ -93,29 +93,29 @@ async def delete_player(message: types.Message):
             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
 
-async def send_month_player_graphic(message: types.Message):
-    """Отправляет график рейда игрока"""
-    is_guild_member = message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, message.from_user, message.chat)
-    if is_guild_member:
-        if admin:
-            try:
-                player_name = message.get_args()
-                if not player_name:
-                    await message.reply(f"Неверный формат ввода. Правильно:\n/grafic имя_игрока\nЧерез пробел.")
-                    return
-                if "@" in player_name:
-                    player_name = player_name.replace("@", "")
-                buf: io.BytesIO = await get_month_player_graphic(message, player_name)
-                if buf:
-                    await bot.send_photo(chat_id=message.chat.id, photo=buf)
-                else:
-                    await bot.send_message(message.chat.id,
-                                           text=f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
-            except Exception as e:
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-        else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+# async def send_month_player_graphic(message: types.Message):
+#     """Отправляет график рейда игрока"""
+#     is_guild_member = message.conf.get('is_guild_member', False)
+#     admin = await is_admin(bot, message.from_user, message.chat)
+#     if is_guild_member:
+#         if admin:
+#             try:
+#                 player_name = message.get_args()
+#                 if not player_name:
+#                     await message.reply(f"Неверный формат ввода. Правильно:\n/grafic имя_игрока\nЧерез пробел.")
+#                     return
+#                 if "@" in player_name:
+#                     player_name = player_name.replace("@", "")
+#                 buf: io.BytesIO = await get_month_player_graphic(player_name)
+#                 if buf:
+#                     await bot.send_photo(chat_id=message.chat.id, photo=buf)
+#                 else:
+#                     await bot.send_message(message.chat.id,
+#                                            text=f"Неверно введено имя \"{player_name}\". Попробуйте проверить правильность написания")
+#             except Exception as e:
+#                 await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+#         else:
+#             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
 
 async def send_month_guild_grafic(message: types.Message):
@@ -164,7 +164,7 @@ def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(players_list, commands=['players_list'], is_chat_admin=True)
     dp.register_message_handler(delete_player, commands=['delete_player'], is_chat_admin=True)
     dp.register_message_handler(admin_command_help, commands=['admin'])
-    dp.register_message_handler(send_month_player_graphic, commands=['graphic'], is_chat_admin=True)
+    # dp.register_message_handler(send_month_player_graphic, commands=['graphic'], is_chat_admin=True)
     dp.register_message_handler(send_month_guild_grafic, commands=['guild_month'], is_chat_admin=True)
     dp.register_message_handler(send_year_guild_grafic, commands=['guild_year'], is_chat_admin=True)
     dp.register_message_handler(check_ids, commands=['check'], is_chat_admin=True)

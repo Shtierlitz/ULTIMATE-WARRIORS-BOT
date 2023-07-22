@@ -117,7 +117,7 @@ async def get_player_gp_graphic(player_name, period):
     return buf
 
 
-async def get_month_player_graphic(message: types.Message, player_name: str) -> io.BytesIO or None:
+async def get_month_player_graphic(player_name: str) -> io.BytesIO or None:
     """Создает график рейдов игрока"""
 
     file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')

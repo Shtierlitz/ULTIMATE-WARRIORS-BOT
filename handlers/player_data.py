@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from middlewares.user_check import guild_members
-from src.graphics import get_player_gp_graphic, get_player_rank_graphic
+from src.graphics import get_player_gp_graphic, get_player_rank_graphic, get_month_player_graphic
 from src.player import PlayerData
 from src.guild import GuildData
 from create_bot import bot
@@ -88,10 +88,11 @@ async def player_data_info(message: types.Message, state: FSMContext):
     graphic_keys = {
         "📊 ГМ за месяц": (get_player_gp_graphic, (player.name, 'month')),
         "📊 ГМ за год": (get_player_gp_graphic, (player.name, 'year')),
-        "📊 пешки за месяц": (get_player_rank_graphic, (player.name, 'month', False)),
-        "📊 флота за месяц": (get_player_rank_graphic, (player.name, 'month', True)),
-        "📊 пешки за год": (get_player_rank_graphic, (player.name, 'year', False)),
-        "📊 флота за год": (get_player_rank_graphic, (player.name, 'year', True)),
+        "📊 пешка за месяц": (get_player_rank_graphic, (player.name, 'month', False)),
+        "📊 флот за месяц": (get_player_rank_graphic, (player.name, 'month', True)),
+        "📊 пешка за год": (get_player_rank_graphic, (player.name, 'year', False)),
+        "📊 флот за год": (get_player_rank_graphic, (player.name, 'year', True)),
+        "📊 энка за месяц": (get_month_player_graphic, (player.name, ))  # передаем имя игрока напрямую, а не в кортеже
     }
 
     if key in graphic_keys:
@@ -106,10 +107,6 @@ async def player_data_info(message: types.Message, state: FSMContext):
     if key == '🗒Все данные':
         all_data = await PlayerData().extract_data(player)
         return await message.reply(all_data)
-
-    # if key in player.__dict__:
-    #     player_data = player.__dict__[key]
-    #     return await message.reply(f"Данные {key} о пользователе {player.name}:\n{player_data}")
 
     # Если ввод не является командой и не соответствует атрибутам игрока
     await state.reset_state()

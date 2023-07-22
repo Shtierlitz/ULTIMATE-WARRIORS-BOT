@@ -21,8 +21,6 @@ async def create_keyboard():
         )
         players = query.scalars().all()
 
-
-
     if players:
         keyboard.row(KeyboardButton("Отмена❌"))
 
@@ -40,18 +38,19 @@ async def create_keyboard():
     return keyboard
 
 
-
 async def create_player_info_keyboard(player_name: str):
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 
     player = await get_player_by_name_or_nic(player_name)
 
     if player:
-        keyboard.row(KeyboardButton("🔙Назад"), KeyboardButton("Отмена❌")) # Создать отдельную строку для кнопки "cencel"
+        keyboard.row(KeyboardButton("🔙Назад"),
+                     KeyboardButton("Отмена❌"))  # Создать отдельную строку для кнопки "cencel"
         keyboard.row(KeyboardButton("🗒Все данные"))
+        keyboard.row(KeyboardButton("📊 энка за месяц"))
         keyboard.row(KeyboardButton("📊 ГМ за месяц"), KeyboardButton("📊 ГМ за год"))
-        keyboard.row(KeyboardButton("📊 пешки за месяц"), KeyboardButton("📊 флота за месяц"))
-        keyboard.row(KeyboardButton("📊 пешки за год"), KeyboardButton("📊 флота за год"))
+        keyboard.row(KeyboardButton("📊 пешка за месяц"), KeyboardButton("📊 флот за месяц"))
+        keyboard.row(KeyboardButton("📊 пешка за год"), KeyboardButton("📊 флот за год"))
 
         # row_btns = []  # Создать список для кнопок строк
         #
@@ -68,4 +67,3 @@ async def create_player_info_keyboard(player_name: str):
         #     keyboard.row(*row_btns)  # Добавить оставшиеся кнопки на клавиатуру
 
     return keyboard
-
