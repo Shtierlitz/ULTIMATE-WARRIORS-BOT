@@ -246,13 +246,22 @@ class PlayerData:
 
 class PlayerScoreService:
     @staticmethod
-    async def get_recent_players():
+    async def get_recent_players(yesterday: bool = None) -> List[Player]:
         """Создает список из всех записей о согильдийцах за текущие игровые сутки"""
         new_day_start = get_new_day_start()
+        if yesterday:
+            # Устанавливаем начальное и конечное время для "вчерашнего" дня
+            start_time = new_day_start - timedelta(days=1)
+            end_time = new_day_start
+        else:
+            # Устанавливаем начальное время для "сегодняшнего" дня и конечное время как "сейчас"
+            start_time = new_day_start
+            end_time = datetime.now()
+
         async with async_session_maker() as session:  # открываем асинхронную сессию
             query = await session.execute(
                 select(Player).filter(
-                    Player.update_time >= new_day_start))
+                    Player.update_time >= start_time, Player.update_time < end_time))
             result = query.scalars().all()
             return result
 
@@ -327,9 +336,12 @@ class PlayerScoreService:
         return f"\n{'-' * 30}\n".join(scores)
 
     @staticmethod
-    async def get_reid_lazy_fools():
+    async def get_reid_lazy_fools(yesterday: bool = None):
         """Возвращает строку из списка всех кто еще не сдал 600 энки на текущий момент"""
-        recent_players = await PlayerScoreService.get_recent_players()
+        if yesterday:
+            recent_players = await PlayerScoreService.get_recent_players(yesterday)
+        else:
+            recent_players = await PlayerScoreService.get_recent_players()
         if not recent_players:
             return "Нет данных об игроках."
         sorted_scores, _ = PlayerScoreService.get_sorted_scores(recent_players)

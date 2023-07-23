@@ -7,3 +7,4 @@ from handlers import send_group_message
 from handlers import send_message_everyone
 from handlers import developer
 from handlers import add_player_state
+from handlers import reid_points_state

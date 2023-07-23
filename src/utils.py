@@ -345,10 +345,10 @@ async def is_admin(bot: Bot, user: types.User, chat: types.Chat) -> bool:
     return member.is_chat_admin() or member.is_chat_creator()
 
 
-async def get_monthly_records() -> List[Player]:
+async def get_monthly_records(player_name: str) -> List[Player]:
     async with async_session_maker() as session:
         # Получить все записи, отсортированные по времени обновления
-        query = select(Player).order_by(Player.update_time)
+        query = select(Player).order_by(Player.update_time).filter_by(name=player_name)
         result = await session.execute(query)
         all_records = result.scalars().all()
 
@@ -368,10 +368,3 @@ async def get_monthly_records() -> List[Player]:
 
         return monthly_records
 
-        # Иначе, ищем следующую доступную дату после 1-го числа из имеющихся записей
-        for date in dates:
-            if date.day == 1:
-                return date.date()
-
-        # Если нет доступных записей после первого числа, возвращаем None
-        return None

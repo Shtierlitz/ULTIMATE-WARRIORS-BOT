@@ -302,8 +302,7 @@ async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool 
 
     if not player_data:
         return None
-    d = await get_monthly_records()
-    print(d[0].update_time.date())
+
     # Подготовка данных для построения графика
     if is_fleet:
         rank_data = [(player.update_time.strftime("%d-%m-%Y"), player.fleet_arena_rank) for player in player_data]
