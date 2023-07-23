@@ -31,9 +31,6 @@ COMMANDS = {
 }
 
 
-
-
-
 def handle_exception(future):
     exception = future.exception()
     if exception:
@@ -103,11 +100,11 @@ async def get_gp_all(message: types.Message):
     """Вся галактическая мощь за месяц по всем"""
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
-        # try:
+        try:
             message_strings = await PlayerPowerService.get_galactic_power_all()
             await bot.send_message(message.chat.id, message_strings)
-        # except Exception as e:
-        #     await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+        except Exception as e:
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
