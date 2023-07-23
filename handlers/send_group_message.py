@@ -65,12 +65,12 @@ async def process_message(message: types.Message, state: FSMContext):
                     try:
                         await bot.send_message(user_id, data['message'])
                     except Exception as e:
-                        failed_users.append(user_nic)  # Добавляем пользователя в список неудач
+                        failed_users.append(user_nic + " " + str(e))  # Добавляем пользователя в список неудач
                         print(f"Не удалось отправить сообщение пользователю {user_nic}: {e}")
             else:
                 failed_users = [i for i in data['users']]
             if failed_users:
-                await message.answer("Не удалось отправить сообщения следующим пользователям: " + ", ".join(failed_users))
+                await message.answer("Не удалось отправить сообщения следующим пользователям: " + "\n" + ",\n".join(failed_users))
             else:
                 await message.answer("Сообщения были отправлены.")
     else:

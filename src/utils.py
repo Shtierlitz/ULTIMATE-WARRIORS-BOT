@@ -3,7 +3,7 @@ import asyncio
 import json
 import os
 import random
-from typing import Tuple
+from typing import Tuple, List
 
 import aiohttp
 import pytz
@@ -343,3 +343,35 @@ async def get_end_date():
 async def is_admin(bot: Bot, user: types.User, chat: types.Chat) -> bool:
     member = await bot.get_chat_member(chat.id, user.id)
     return member.is_chat_admin() or member.is_chat_creator()
+
+
+async def get_monthly_records() -> List[Player]:
+    async with async_session_maker() as session:
+        # Получить все записи, отсортированные по времени обновления
+        query = select(Player).order_by(Player.update_time)
+        result = await session.execute(query)
+        all_records = result.scalars().all()
+
+        # Если нет записей, возвращаем пустой список
+        if not all_records:
+            return []
+
+        # Начинаем с самой ранней записи
+        monthly_records = [all_records[0]]
+
+        # Ищем запись для первого числа каждого последующего месяца
+        current_date = all_records[0].update_time
+        for record in all_records:
+            if record.update_time.month != current_date.month or record.update_time.year != current_date.year:
+                monthly_records.append(record)
+                current_date = record.update_time
+
+        return monthly_records
+
+        # Иначе, ищем следующую доступную дату после 1-го числа из имеющихся записей
+        for date in dates:
+            if date.day == 1:
+                return date.date()
+
+        # Если нет доступных записей после первого числа, возвращаем None
+        return None

@@ -1,7 +1,7 @@
 # src/graphics.py
 import json
 import os
-
+import pandas as pd
 from create_bot import bot
 from db_models import Player, Guild
 from settings import async_session_maker
@@ -10,9 +10,9 @@ from plotly import io as pio
 import io
 
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, extract
 
-from src.utils import get_new_day_start
+from src.utils import get_new_day_start, get_monthly_records
 from aiogram import types
 from datetime import datetime, timedelta
 
@@ -148,9 +148,10 @@ async def get_month_player_graphic(player_name: str) -> io.BytesIO or None:
     if not player_data:
         return
 
-    # Подготовка данных для построения графика
-    data = sorted([(player.update_time, int(player.reid_points)) for player in player_data])
+    data = [(player.update_time.strftime("%d-%m-%Y"), int(player.reid_points)) for player in player_data]
+    data.sort(key=lambda x: x[0])
     update_times, reid_points = zip(*data)
+
 
     # Построение графика
     fig = go.Figure(data=go.Scatter(
@@ -292,13 +293,17 @@ async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool 
         one_year_ago = new_day_start - relativedelta(years=1)
         async with async_session_maker() as session:
             player_data = await session.execute(
-                select(Player).filter_by(name=player_name).filter(
-                    Player.update_time >= one_year_ago))  # Использовать эту дату в фильтре
+                select(Player)
+                .filter_by(name=player_name)
+                .filter(Player.update_time >= one_year_ago)
+                .filter(extract('day', Player.update_time) == 1)  # Используйте extract для фильтрации дня
+            )
             player_data = player_data.scalars().all()
 
     if not player_data:
         return None
-
+    d = await get_monthly_records()
+    print(d[0].update_time.date())
     # Подготовка данных для построения графика
     if is_fleet:
         rank_data = [(player.update_time.strftime("%d-%m-%Y"), player.fleet_arena_rank) for player in player_data]
@@ -321,7 +326,8 @@ async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool 
         xaxis_title='Update Time',
         yaxis_title='Rank',
         yaxis=dict(
-            dtick=1
+            dtick=1,
+            autorange="reversed"  # добавьте эту строку
         )
     )
 
