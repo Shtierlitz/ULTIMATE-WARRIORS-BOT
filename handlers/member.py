@@ -22,9 +22,7 @@ COMMANDS = {
     "start": "Получить информацию о доступных командах",
     "player": "Открыть панель кнопок где можно получить информацию по согильдийцу",
     "gac": "Получить полную статистику по регистрации на ВА с сылками на возможных соперников",
-    "reid_list": "Показывает полный список кто сколько купонов сдал",
-    "reid_lazy": "Список тех кто еще не сдал 600",
-    "reid_all": "Список сданной энки за календарный месяц",
+    "reid": "Контроль энки",
     "gp_all": "Список роста всей галактической мощи за календарный месяц",
     "guildinfo": "Инфа о гильдии",
     "admin": "Список команд администраторов",
@@ -33,7 +31,7 @@ COMMANDS = {
 }
 
 
-# executor = ThreadPoolExecutor(max_workers=2)
+
 
 
 def handle_exception(future):
@@ -90,36 +88,6 @@ async def get_user_data(message: types.Message):
             await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
-async def get_raid_points(message: types.Message):
-    is_guild_member = message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        try:
-            message_strings = await PlayerScoreService.get_raid_scores()
-            await bot.send_message(message.chat.id, message_strings)
-        except Exception as e:
-            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
-
-async def get_raid_points_all(message: types.Message):
-    is_guild_member = message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        try:
-            message_strings = await PlayerScoreService.get_raid_scores_all()
-            await bot.send_message(message.chat.id, message_strings)
-        except Exception as e:
-            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
-
-async def get_raid_lazy(message: types.Message):
-    is_guild_member = message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        try:
-            message_strings = await PlayerScoreService.get_reid_lazy_fools()
-            await bot.send_message(message.chat.id, message_strings)
-        except Exception as e:
-            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-
-
 async def get_guild_info(message: types.Message):
     is_guild_member = message.conf.get('is_guild_member', False)
     if is_guild_member:
@@ -145,8 +113,5 @@ def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])
     dp.register_message_handler(get_user_data, commands=['player1'], state='*', run_task=True)
     dp.register_message_handler(command_gac_statistic, commands=['gac'], state='*')
-    dp.register_message_handler(get_raid_points, commands=['reid_list'], state='*')
-    dp.register_message_handler(get_raid_lazy, commands=['reid_lazy'], state='*')
-    dp.register_message_handler(get_raid_points_all, commands=['reid_all'], state='*')
     dp.register_message_handler(get_gp_all, commands=['gp_all'], state='*')
     dp.register_message_handler(get_guild_info, commands=['guildinfo'])
