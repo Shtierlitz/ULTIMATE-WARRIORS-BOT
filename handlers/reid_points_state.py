@@ -1,11 +1,9 @@
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import CallbackQuery
 
-from create_bot import bot
 from src.player import PlayerScoreService
-from src.utils import add_player_to_ids, is_admin
 
 
 class RaidState(StatesGroup):
@@ -25,7 +23,6 @@ async def start_cmd_handler(message: types.Message, state: FSMContext):
     await message.answer("🔋Энка сервис🔋", reply_markup=keyboard)
 
 
-
 async def raid_points_handler(call: CallbackQuery, state: FSMContext):
     await RaidState.RaidPoints.set()
     message_strings = await PlayerScoreService.get_raid_scores()
@@ -36,7 +33,6 @@ async def raid_points_all_handler(call: CallbackQuery, state: FSMContext):
     await RaidState.RaidPointsAll.set()
     message_strings = await PlayerScoreService.get_raid_scores_all()
     await call.message.answer(message_strings)
-
 
 
 async def raid_lazy_handler(call: CallbackQuery, state: FSMContext):

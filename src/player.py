@@ -76,12 +76,12 @@ class PlayerData:
 
             if existing_user_today:
                 print(f"{data['name']}: old")
-                await self.__set_player_attributes(existing_user_today, data)
+                await self._set_player_attributes(existing_user_today, data)
 
                 await session.commit()
             else:
                 print(f"{data['name']}: new")
-                new_user = await self.__set_player_attributes(Player(), data)
+                new_user = await self._set_player_attributes(Player(), data)
                 session.add(new_user)
                 await session.commit()
 
@@ -89,7 +89,7 @@ class PlayerData:
             await session.execute(delete(Player).where(Player.update_time < month_old_date))
             await session.commit()
 
-    async def __set_player_attributes(self, player: Player, data):
+    async def _set_player_attributes(self, player: Player, data):
         """Устанавливает значения из переданного словаря в модель Player"""
         player.name = data['name']
         player.ally_code = data['ally_code']
@@ -110,7 +110,6 @@ class PlayerData:
         player.ship_galactic_power = data['ship_galactic_power']
         player.guild_join_time = datetime.strptime(data['guild_join_time'], "%Y-%m-%dT%H:%M:%S")
         player.url = 'https://swgoh.gg' + data['url']
-
         last_updated_utc = datetime.strptime(data['last_updated'], '%Y-%m-%dT%H:%M:%S')
         player.last_swgoh_updated = last_updated_utc
         player.guild_currency_earned = data['guild_points']

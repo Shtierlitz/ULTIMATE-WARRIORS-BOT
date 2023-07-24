@@ -1,11 +1,9 @@
 # keyboards/players_kb.py
 
-
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from db_models import Player
-from datetime import datetime, date
 
 from settings import async_session_maker
 from src.utils import get_new_day_start, get_player_by_name_or_nic
@@ -50,20 +48,6 @@ async def create_player_info_keyboard(player_name: str):
         keyboard.row(KeyboardButton("📊 энка за месяц"))
         keyboard.row(KeyboardButton("📊 ГМ за месяц"), KeyboardButton("📊 ГМ за год"))
         keyboard.row(KeyboardButton("📊 пешка за месяц"), KeyboardButton("📊 флот за месяц"))
-        keyboard.row(KeyboardButton("📊 пешка за год"), KeyboardButton("📊 флот за год"))
-
-        # row_btns = []  # Создать список для кнопок строк
-        #
-        # for index, column in enumerate(Player.__table__.columns):  # Получить все поля модели Player
-        #     if column.name in ('name', 'tg_id', 'id'):  # Если имя поля 'tg_id', пропустите его
-        #         continue
-        #     button = KeyboardButton(column.name)  # Создать кнопку с именем поля
-        #     row_btns.append(button)
-        #     if (index + 1) % 2 == 0:  # Если это каждая 4-ая кнопка
-        #         keyboard.row(*row_btns)  # Добавить ряд кнопок на клавиатуру
-        #         row_btns = []  # Очистить список кнопок для следующего ряда
-        #
-        # if row_btns:  # Если есть оставшиеся кнопки
-        #     keyboard.row(*row_btns)  # Добавить оставшиеся кнопки на клавиатуру
+        keyboard.row(KeyboardButton("📊 пешка за все время"), KeyboardButton("📊 флот за все время"))
 
     return keyboard

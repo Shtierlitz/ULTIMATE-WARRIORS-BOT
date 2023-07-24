@@ -90,8 +90,8 @@ async def player_data_info(message: types.Message, state: FSMContext):
         "📊 ГМ за год": (get_player_gp_graphic, (player.name, 'year')),
         "📊 пешка за месяц": (get_player_rank_graphic, (player.name, 'month', False)),
         "📊 флот за месяц": (get_player_rank_graphic, (player.name, 'month', True)),
-        "📊 пешка за год": (get_player_rank_graphic, (player.name, 'year', False)),
-        "📊 флот за год": (get_player_rank_graphic, (player.name, 'year', True)),
+        "📊 пешка за все время": (get_player_rank_graphic, (player.name, 'year', False)),
+        "📊 флот за все время": (get_player_rank_graphic, (player.name, 'year', True)),
         "📊 энка за месяц": (get_month_player_graphic, (player.name, ))  # передаем имя игрока напрямую, а не в кортеже
     }
 
