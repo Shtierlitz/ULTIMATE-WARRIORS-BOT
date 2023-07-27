@@ -26,23 +26,27 @@ COMMANDS = {
     # Добавьте здесь другие команды по мере необходимости
 }
 
+
 async def player_cmd_handler(call: types.CallbackQuery, state: FSMContext):
     keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("Добавить игрока в бот", callback_data='add_player'))
-    keyboard.add(types.InlineKeyboardButton("Список всех", callback_data='players_list'))
-    keyboard.add(types.InlineKeyboardButton("Удалить игрока из бота", callback_data='delete_player'))
+    keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Добавить игрока в бот", callback_data='add_player'))
+    keyboard.add(types.InlineKeyboardButton("🗓 Список всех", callback_data='players_list'))
+    keyboard.add(types.InlineKeyboardButton("🔪 Удалить игрока из бота", callback_data='delete_player'))
     await call.message.answer("Служба по игрокам", reply_markup=keyboard)
+
 
 async def admin_command_help(message: types.Message, state: FSMContext):
     keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("Отправить групповое сообщение", callback_data='group'))
-    keyboard.add(types.InlineKeyboardButton("Отправить сообщение всем", callback_data='group_all'))
-    keyboard.add(types.InlineKeyboardButton("Запись/удаление игрока в бот", callback_data='players'))
-    keyboard.add(types.InlineKeyboardButton("График ГМ гильдии за месяц", callback_data='guild_month'))
-    keyboard.add(types.InlineKeyboardButton("График ГМ гильдии за год", callback_data='guild_year'))
-    keyboard.add(types.InlineKeyboardButton("Экстреннее обновление базы данных", callback_data='refresh'))
-    keyboard.add(types.InlineKeyboardButton("Команды разработчика (Не влезай - убьет! ☠️", callback_data='developer'))
+    keyboard.add(types.InlineKeyboardButton("✍🏻 Отправить групповое сообщение", callback_data='group'))
+    keyboard.add(types.InlineKeyboardButton("✉️ Отправить сообщение всем", callback_data='group_all'))
+    keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Запись/удаление игрока в бот", callback_data='players'))
+    keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за месяц", callback_data='guild_month'))
+    keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за год", callback_data='guild_year'))
+    keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление базы данных", callback_data='refresh'))
+    keyboard.add(
+        types.InlineKeyboardButton("☠️ Команды разработчика (Не влезай - убьет! ☠️", callback_data='developer'))
     await message.answer("Панель Администрации", reply_markup=keyboard)
+
 
 # async def admin_command_help(message: types.Message):
 #     """Выводит инфо о командах"""
@@ -82,6 +86,7 @@ async def command_db_extra(call: types.CallbackQuery, state: FSMContext):
         await call.message.answer(
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
+
 async def players_list(call: types.CallbackQuery, state: FSMContext):
     """Отправляет содержимое файла ids.json в чат"""
     is_guild_member = call.message.conf.get('is_guild_member', False)
@@ -101,6 +106,7 @@ async def players_list(call: types.CallbackQuery, state: FSMContext):
     else:
         await call.message.answer(
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+
 
 async def send_month_guild_grafic(call: types.CallbackQuery, state: FSMContext):
     """Отправляет график мощи гильдии"""
@@ -138,25 +144,29 @@ async def send_year_guild_graphic(call: types.CallbackQuery, state: FSMContext):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
-async def check_ids(message: types.Message):
-    is_guild_member = message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, message.from_user, message.chat)
+async def check_ids(call: types.CallbackQuery, state: FSMContext):
+    is_guild_member = call.message.conf.get('is_guild_member', False)
+    admin = await is_admin(bot, call.from_user, call.message.chat)
     if is_guild_member:
         if admin:
             try:
-                await check_guild_players(message)
+                await check_guild_players(call.message)
             except Exception as e:
-                await message.reply(
+                await call.message.reply(
                     f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
         else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+    else:
+        await call.message.answer(
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
+            "Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 def register_handlers_admin(dp: Dispatcher):
-    dp.register_callback_query_handler(command_db_extra, text='refresh', is_chat_admin=True)
-    dp.register_callback_query_handler(players_list, text=['players_list'], state='*', is_chat_admin=True)
+    dp.register_callback_query_handler(command_db_extra, text='refresh')
+    dp.register_callback_query_handler(players_list, text=['players_list'], state='*')
     dp.register_message_handler(admin_command_help, commands=['admin'])
-    dp.register_callback_query_handler(send_month_guild_grafic, text='guild_month', is_chat_admin=True)
-    dp.register_callback_query_handler(send_year_guild_graphic, text='guild_year', is_chat_admin=True)
-    dp.register_message_handler(check_ids, commands=['check'], is_chat_admin=True)
+    dp.register_callback_query_handler(send_month_guild_grafic, text='guild_month')
+    dp.register_callback_query_handler(send_year_guild_graphic, text='guild_year')
+    dp.register_callback_query_handler(check_ids, text='check')
     dp.register_callback_query_handler(player_cmd_handler, text='players', state='*')

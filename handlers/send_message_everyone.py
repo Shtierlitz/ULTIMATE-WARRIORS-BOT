@@ -7,6 +7,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from sqlalchemy import select
 
 from create_bot import bot
+from handlers.add_player_state import get_keyboard, cancel_add_player
 from settings import async_session_maker
 from src.player import Player
 from src.utils import get_new_day_start, is_admin
@@ -16,13 +17,14 @@ class FormEveryone(StatesGroup):
     message = State()
 
 
-async def start_all_command(message: types.Message, state: FSMContext):
-    admin = await is_admin(bot, message.from_user, message.chat)
+async def start_all_command(call: types.CallbackQuery, state: FSMContext):
+    admin = await is_admin(bot, call.from_user, call.message.chat)
     if admin:
-        await message.answer("Введите сообщение, которое хотите отправить всем членам гильдии.")
+        keyboard = get_keyboard()
+        await call.message.answer("Введите сообщение, которое хотите отправить всем членам гильдии.", reply_markup=keyboard)
         await FormEveryone.message.set()
     else:
-        await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+        await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
         await state.finish()
 
 
@@ -65,5 +67,7 @@ async def process_all_message(message: types.Message, state: FSMContext):
 
 
 def register_handlers_message_all(dp: Dispatcher):
-    dp.register_message_handler(start_all_command, commands='group_all')
+    dp.register_callback_query_handler(start_all_command, text='group_all')
     dp.register_message_handler(process_all_message, state=FormEveryone.message)
+    dp.register_callback_query_handler(cancel_add_player, text="cancel",
+                                       state=FormEveryone.all_states)  # Обработчик кнопки отмены

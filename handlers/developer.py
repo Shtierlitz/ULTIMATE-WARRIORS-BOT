@@ -15,7 +15,6 @@ COMMANDS = {
     # Добавьте здесь другие команды по мере необходимости
 }
 
-
 async def developer_commands(call: types.CallbackQuery, state: FSMContext):
     """Выводит инфо о командах разработчика"""
     is_guild_member = call.message.conf.get('is_guild_member', False)
@@ -25,16 +24,35 @@ async def developer_commands(call: types.CallbackQuery, state: FSMContext):
     super_admin = await is_super_admin(tg_id)
     if is_guild_member:
         if admin and super_admin:
-            try:
-                commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
-                await bot.send_message(call.message.chat.id, f"Список доступных команд разработчика:\n\n{commands}")
-            except Exception as e:
-                await call.message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Удалить игрока из базы данных", callback_data='del_player_db'))
+            keyboard.add(types.InlineKeyboardButton("🗓 Проверка всех чатов на доступность", callback_data='check'))
+            await call.message.answer("Служба по игрокам", reply_markup=keyboard)
         else:
             await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
         await call.message.answer(
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+
+# async def developer_commands(call: types.CallbackQuery, state: FSMContext):
+#     """Выводит инфо о командах разработчика"""
+#     is_guild_member = call.message.conf.get('is_guild_member', False)
+#     admin = await is_admin(bot, call.from_user, call.message.chat)
+#     member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
+#     tg_id = member['user']['id']
+#     super_admin = await is_super_admin(tg_id)
+#     if is_guild_member:
+#         if admin and super_admin:
+#             try:
+#                 commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
+#                 await bot.send_message(call.message.chat.id, f"Список доступных команд разработчика:\n\n{commands}")
+#             except Exception as e:
+#                 await call.message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+#         else:
+#             await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+#     else:
+#         await call.message.answer(
+#             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def del_db_player(message: types.Message):

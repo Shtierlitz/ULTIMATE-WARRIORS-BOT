@@ -66,7 +66,6 @@ async def delete_player_process(call: types.CallbackQuery, state: FSMContext):
     member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
     tg_id = member['user']['id']
     super_admin = await is_super_admin(tg_id)
-    print(is_guild_member)
     if is_guild_member:
         if admin and super_admin:
             try:
