@@ -144,11 +144,7 @@ async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
         await bot.send_message(message.chat.id, "Файл ids.json не найден.")
 
 
-async def delete_player_from_ids(message: types.Message):
-    player_name = message.get_args()  # Получаем имя игрока
-    if not player_name:
-        await message.reply("Пожалуйста, предоставьте имя игрока.")
-        return
+async def delete_player_from_ids(message: types.Message, player_name):
 
     file_path = os.path.join(os.path.dirname(__file__), f'../{os.environ.get("IDS_JSON")}')
 
@@ -242,7 +238,8 @@ async def check_guild_players(message: types.Message):
                                            f"У игрока: {player_name}, не создан или не добавлен ТГ ник")
                     await asyncio.sleep(3)
                 else:
-                    await bot.send_message(player_tg_id, f"Проверка. Не обращай внимания. Проводится тестирование.")
+                    sent_message = await bot.send_message(player_tg_id, f"Проверка. Не обращай внимания. Проводится тестирование.")
+                    await bot.delete_message(sent_message.chat.id, sent_message.message_id)
                     await asyncio.sleep(3)
             except ChatNotFound:
                 await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
@@ -368,3 +365,11 @@ async def get_monthly_records(player_name: str) -> List[Player]:
 
         return monthly_records
 
+
+async def is_super_admin(tg_id: str):
+    """Проверяет суперадмин ли пользователь"""
+    env_members = os.environ.get("SUPER_ADMINS")
+    eng_members_list = list(map(int, env_members.split(",")))
+    if tg_id in eng_members_list:
+        return True
+    return False

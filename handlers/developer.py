@@ -2,7 +2,7 @@
 from aiogram import types, Dispatcher
 
 from create_bot import bot
-from src.utils import delete_db_player_data, is_admin
+from src.utils import delete_db_player_data, is_admin, is_super_admin
 
 COMMANDS = {
     "del_player_db <имя игрока или ник или код союзника>":
@@ -18,8 +18,11 @@ async def developer_commands(message: types.Message):
     """Выводит инфо о командах разработчика"""
     is_guild_member = message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, message.from_user, message.chat)
+    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
+    tg_id = member['user']['id']
+    super_admin = await is_super_admin(tg_id)
     if is_guild_member:
-        if admin:
+        if admin and super_admin:
             try:
                 commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
                 await bot.send_message(message.chat.id, f"Список доступных команд разработчика:\n\n{commands}")
@@ -33,8 +36,11 @@ async def del_db_player(message: types.Message):
     """Удаляет все записи из баз данных об игроке"""
     is_guild_member = message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, message.from_user, message.chat)
+    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
+    tg_id = member['user']['id']
+    super_admin = await is_super_admin(tg_id)
     if is_guild_member:
-        if admin:
+        if admin and super_admin:
             try:
                 player_name = message.get_args()  # Получаем имя игрока
                 if not player_name:

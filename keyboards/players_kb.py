@@ -46,7 +46,7 @@ async def create_player_info_keyboard(player_name: str):
                      KeyboardButton("Отмена❌"))  # Создать отдельную строку для кнопки "cencel"
         keyboard.row(KeyboardButton("🗒Все данные"))
         keyboard.row(KeyboardButton("📊 энка за месяц"))
-        keyboard.row(KeyboardButton("📊 ГМ за месяц"), KeyboardButton("📊 ГМ за год"))
+        keyboard.row(KeyboardButton("📊 ГМ за месяц"), KeyboardButton("📊 ГМ за все время"))
         keyboard.row(KeyboardButton("📊 пешка за месяц"), KeyboardButton("📊 флот за месяц"))
         keyboard.row(KeyboardButton("📊 пешка за все время"), KeyboardButton("📊 флот за все время"))
 

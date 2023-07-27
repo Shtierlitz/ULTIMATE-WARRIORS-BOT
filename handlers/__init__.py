@@ -8,3 +8,4 @@ from handlers import send_message_everyone
 from handlers import developer
 from handlers import add_player_state
 from handlers import reid_points_state
+from handlers import delete_player_state

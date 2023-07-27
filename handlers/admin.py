@@ -10,7 +10,7 @@ from src.graphics import get_month_player_graphic, get_guild_galactic_power
 from src.guild import GuildData
 from src.player import PlayerData
 from src.utils import split_list, get_players_list_from_ids, add_player_to_ids, \
-    delete_player_from_ids, check_guild_players, is_admin
+    delete_player_from_ids, check_guild_players, is_admin, is_super_admin
 
 COMMANDS = {
     "admin": "Получить информацию о доступных командах администратора ⚙⚒",
@@ -33,13 +33,15 @@ async def admin_command_help(message: types.Message):
     """Выводит инфо о командах"""
     is_guild_member = message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, message.from_user, message.chat)
+
     if is_guild_member:
         if admin:
             try:
                 commands = "\n".join([f"/{command} - {description}" for command, description in COMMANDS.items()])
                 await bot.send_message(message.chat.id, f"Список доступных команд администратора:\n\n{commands}")
             except Exception as e:
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+                await message.reply(
+                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
         else:
             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
@@ -57,7 +59,8 @@ async def command_db_extra(message: types.Message):
                 await PlayerData().update_players_data()
             except Exception as e:
                 print(e)
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+                await message.reply(
+                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
         else:
             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
@@ -74,26 +77,10 @@ async def players_list(message: types.Message):
                 await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), final_msg_2)
 
             except Exception as e:
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+                await message.reply(
+                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
         else:
             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-
-
-async def delete_player(message: types.Message):
-    """Удаляет игрока из JSON файла"""
-    is_guild_member = message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, message.from_user, message.chat)
-    if is_guild_member:
-        if admin:
-            try:
-                await delete_player_from_ids(message)
-            except Exception as e:
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-        else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-
-
-
 
 async def send_month_guild_grafic(message: types.Message):
     """Отправляет график мощи гильдии"""
@@ -105,7 +92,8 @@ async def send_month_guild_grafic(message: types.Message):
                 image: io.BytesIO = await get_guild_galactic_power(period="month")
                 await bot.send_photo(chat_id=message.chat.id, photo=image)
             except Exception as e:
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+                await message.reply(
+                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def send_year_guild_grafic(message: types.Message):
@@ -118,7 +106,8 @@ async def send_year_guild_grafic(message: types.Message):
                 image: io.BytesIO = await get_guild_galactic_power(period="year")
                 await bot.send_photo(chat_id=message.chat.id, photo=image)
             except Exception as e:
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+                await message.reply(
+                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
         else:
             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
@@ -131,7 +120,8 @@ async def check_ids(message: types.Message):
             try:
                 await check_guild_players(message)
             except Exception as e:
-                await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+                await message.reply(
+                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
         else:
             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
@@ -139,7 +129,6 @@ async def check_ids(message: types.Message):
 def register_handlers_admin(dp: Dispatcher):
     dp.register_message_handler(command_db_extra, commands=['refresh'], is_chat_admin=True)
     dp.register_message_handler(players_list, commands=['players_list'], is_chat_admin=True)
-    dp.register_message_handler(delete_player, commands=['delete_player'], is_chat_admin=True)
     dp.register_message_handler(admin_command_help, commands=['admin'])
     dp.register_message_handler(send_month_guild_grafic, commands=['guild_month'], is_chat_admin=True)
     dp.register_message_handler(send_year_guild_grafic, commands=['guild_year'], is_chat_admin=True)

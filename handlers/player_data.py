@@ -87,7 +87,7 @@ async def player_data_info(message: types.Message, state: FSMContext):
 
     graphic_keys = {
         "📊 ГМ за месяц": (get_player_gp_graphic, (player.name, 'month')),
-        "📊 ГМ за год": (get_player_gp_graphic, (player.name, 'year')),
+        "📊 ГМ за все время": (get_player_gp_graphic, (player.name, 'year')),
         "📊 пешка за месяц": (get_player_rank_graphic, (player.name, 'month', False)),
         "📊 флот за месяц": (get_player_rank_graphic, (player.name, 'month', True)),
         "📊 пешка за все время": (get_player_rank_graphic, (player.name, 'year', False)),
