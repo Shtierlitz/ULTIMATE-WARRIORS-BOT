@@ -23,16 +23,16 @@ def get_keyboard():
     return keyboard
 
 
-async def start_add_player(message: types.Message, state: FSMContext):
+async def start_add_player(call: types.CallbackQuery, state: FSMContext):
     """Начинает сиквенцию"""
-    admin = await is_admin(bot, message.from_user, message.chat)
+    admin = await is_admin(bot, call.from_user, call.message.chat)
     if admin:
         keyboard = get_keyboard()
-        await message.answer("Начинаем сиквенцию добавления персонажа в ids.json\nВведите код союзника.",
+        await call.message.answer("Начинаем сиквенцию добавления персонажа в ids.json\nВведите код союзника.",
                              reply_markup=keyboard)
         await AddPlayer.ally_code.set()
     else:
-        await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+        await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
         await state.finish()
 
 
@@ -103,7 +103,7 @@ async def cancel_add_player(call: types.CallbackQuery, state: FSMContext):
 
 
 def register_handlers_add_player(dp: Dispatcher):
-    dp.register_message_handler(start_add_player, commands='add_player')
+    dp.register_callback_query_handler(start_add_player, text='add_player', state='*', is_chat_admin=True)
     dp.register_message_handler(process_ally_code, state=AddPlayer.ally_code)
     dp.register_message_handler(process_player_name, state=AddPlayer.player_name)
     dp.register_message_handler(process_tg_nic, state=AddPlayer.tg_nic)

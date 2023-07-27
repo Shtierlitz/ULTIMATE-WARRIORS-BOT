@@ -24,6 +24,7 @@ async def start_cmd_handler(message: types.Message, state: FSMContext):
 
 
 async def raid_points_handler(call: CallbackQuery, state: FSMContext):
+
     await RaidState.RaidPoints.set()
     message_strings = await PlayerScoreService.get_raid_scores()
     await call.message.answer(message_strings)

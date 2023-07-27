@@ -20,6 +20,7 @@ with open(ids_file_path) as f:
 
 
 # Определите middleware
+# Определите middleware
 class GuildMembershipMiddleware(BaseMiddleware):
     """Не позволяет пользоваться ботом никому кроме тех кто дал tg_id"""
     async def on_pre_process_message(self, message: types.Message, data: dict):
@@ -34,4 +35,9 @@ class GuildMembershipMiddleware(BaseMiddleware):
                 "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
             return False
 
+    async def on_pre_process_callback_query(self, call: types.CallbackQuery, data: dict):
+        user_id = str(call.from_user.id)
+        is_guild_member = any(user_id in member.values() for dictionary in guild_members for member in dictionary.values())
+        # сохраняем данные в call.message.conf
+        call.message.conf['is_guild_member'] = is_guild_member
 
