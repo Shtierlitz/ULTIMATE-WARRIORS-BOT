@@ -32,13 +32,13 @@ async def cancel_handler(message: types.Message, state: FSMContext):
             await message.answer('Отменено', reply_markup=types.ReplyKeyboardRemove())
 
 
-async def player_buttons(message: types.Message, state: FSMContext):
-    user_id = str(message.from_user.id)
+async def player_buttons(call: types.CallbackQuery):
+    user_id = str(call.from_user.id)
     is_guild_member = any(
         user_id in member.values() for dictionary in guild_members for member in dictionary.values())
     if is_guild_member:
         kb = await create_keyboard()  # Создать клавиатуру
-        await message.reply("Выберете члена гильдии.", reply_markup=kb)  # Отправить сообщение с клавиатурой
+        await call.message.reply("Выберете члена гильдии.", reply_markup=kb)  # Отправить сообщение с клавиатурой
         await PlayerState.player_name.set()
 
 
@@ -148,7 +148,7 @@ async def back_handler(message: types.Message, state: FSMContext):
 
 
 def register_handlers_player(dp: Dispatcher):
-    dp.register_message_handler(player_buttons, commands=['player'])
+    dp.register_callback_query_handler(player_buttons, text='player')
 
     dp.register_message_handler(cancel_handler, commands=['cencel'], state="*")  # Обработчик команды отмены
 

@@ -145,7 +145,6 @@ async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
 
 
 async def delete_player_from_ids(message: types.Message, player_name):
-
     file_path = os.path.join(os.path.dirname(__file__), f'../{os.environ.get("IDS_JSON")}')
 
     with open(file_path, 'r', encoding='utf-8') as json_file:
@@ -238,7 +237,8 @@ async def check_guild_players(message: types.Message):
                                            f"У игрока: {player_name}, не создан или не добавлен ТГ ник")
                     await asyncio.sleep(3)
                 else:
-                    sent_message = await bot.send_message(player_tg_id, f"Проверка. Не обращай внимания. Проводится тестирование.")
+                    sent_message = await bot.send_message(player_tg_id,
+                                                          f"Проверка. Не обращай внимания. Проводится тестирование.")
                     await bot.delete_message(sent_message.chat.id, sent_message.message_id)
                     await asyncio.sleep(3)
             except ChatNotFound:
@@ -337,9 +337,13 @@ async def get_end_date():
     return end
 
 
-async def is_admin(bot: Bot, user: types.User, chat: types.Chat) -> bool:
-    member = await bot.get_chat_member(chat.id, user.id)
-    return member.is_chat_admin() or member.is_chat_creator()
+async def is_admin(bot: Bot, user_id, chat_id) -> bool:
+    try:
+        member = await bot.get_chat_member(chat_id, user_id)
+        return member.is_chat_admin() or member.is_chat_creator()
+    except:
+        member = await bot.get_chat_member(chat_id.id, user_id.id)
+        return member.is_chat_admin() or member.is_chat_creator()
 
 
 async def get_monthly_records(player_name: str) -> List[Player]:
