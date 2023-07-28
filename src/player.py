@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 from settings import async_session_maker
 from src.errors import Status404Error, AddIdsError, DatabaseBuildError
 from src.utils import get_new_day_start, format_scores, get_localized_datetime, get_end_date
-from sqlalchemy import select, delete, func, text
+from sqlalchemy import select, delete, func, text, cast, Float
 
 load_dotenv()
 
@@ -245,13 +245,17 @@ class PlayerData:
 
 class PlayerScoreService:
     @staticmethod
-    async def get_recent_players(yesterday: bool = None) -> List[Player]:
+    async def get_recent_players(period: str = None) -> List[Player]:
         """Создает список из всех записей о согильдийцах за текущие игровые сутки"""
         new_day_start = get_new_day_start()
-        if yesterday:
-            # Устанавливаем начальное и конечное время для "вчерашнего" дня
+        if period == "yesterday":
             start_time = new_day_start - timedelta(days=1)
             end_time = new_day_start
+        elif period == "week":
+            start_time = new_day_start - timedelta(days=7)
+            end_time = new_day_start
+        elif period == "month":
+            start_time = new_day_start - timedelta(days=30)
         else:
             # Устанавливаем начальное время для "сегодняшнего" дня и конечное время как "сейчас"
             start_time = new_day_start
@@ -335,10 +339,14 @@ class PlayerScoreService:
         return f"\n{'-' * 30}\n".join(scores)
 
     @staticmethod
-    async def get_reid_lazy_fools(yesterday: bool = None):
+    async def get_reid_lazy_fools(period: str = None):
         """Возвращает строку из списка всех кто еще не сдал 600 энки на текущий момент"""
-        if yesterday:
-            recent_players = await PlayerScoreService.get_recent_players(yesterday)
+        if period == 'yesterday':
+            recent_players = await PlayerScoreService.get_recent_players(period)
+        elif period == 'week':
+            recent_players = await PlayerScoreService.get_recent_players(period)
+        elif period == 'month':
+            recent_players = await PlayerScoreService.get_recent_players(period)
         else:
             recent_players = await PlayerScoreService.get_recent_players()
         if not recent_players:
@@ -356,6 +364,72 @@ class PlayerScoreService:
         local_time_str = local_time.strftime('%H:%M')
 
         scores.insert(0, f"\nСписок не сдавших 600 энки на {local_time_str} по {os.environ.get('TZ_SUFFIX')}\n")
+        return f"\n{'-' * 30}\n".join(scores)
+
+    @staticmethod
+    async def get_least_reid_point_players(period: str = "week", least: bool = True):
+        """Return players with the lowest or highest total reid points in a week or month."""
+
+        # Determine time frame
+        days_ago = 7 if period == "week" else 30 if period == "month" else None
+        if days_ago is None:
+            return "Invalid period. Must be either 'week' or 'month'."
+
+        # Define the start time
+        start_time = datetime.now() - timedelta(days=days_ago)
+
+        # Fetch players and their total reid points for the specified period
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Player)
+                .filter(Player.update_time >= start_time)
+            )
+        recent_players = result.scalars().all()
+
+        # Calculate total reid points for each player
+        player_scores = {}
+        for player in recent_players:
+            if player.name in player_scores:
+                player_scores[player.name] += int(player.reid_points)
+            else:
+                player_scores[player.name] = int(player.reid_points)
+
+        # Sort players by total reid points
+        sorted_players = sorted(player_scores.items(), key=lambda x: x[1], reverse=not least)
+
+        return sorted_players
+
+    @staticmethod
+    async def get_least_reid_lazy_fools(period: str = "week", least: bool = True):
+        """Return a string with the list of players who have the least or most total reid points."""
+
+        # Get the sorted list of players with their total reid points
+        sorted_players = await PlayerScoreService.get_least_reid_point_players(period=period, least=least)
+
+        if not sorted_players:
+            return "No player data."
+
+        if period == 'week':
+            points = 4200
+            per = "неделю"
+        else:
+            points = 18000
+            per = "месяц"
+
+        # Filter players who have less than the expected points and limit to 10
+        if least:
+            sorted_players = [player for player in sorted_players if player[1] < points][:10]
+            scores = [f"{index + 1}. {name}: {player_points}" for index, (name, player_points) in
+                      enumerate(sorted_players)][::-1]
+        else:
+            sorted_players = sorted_players[:10]
+            scores = [f"{index + 1}. {name}: {player_points}" for index, (name, player_points) in
+                      enumerate(sorted_players)]
+
+
+        scores.insert(0,
+                      f"\n{'Список отстающих' if least else 'Список лидеров'} за {per}.\n\nДолжно быть по {points}\n")
+
         return f"\n{'-' * 30}\n".join(scores)
 
 

@@ -44,7 +44,8 @@ async def player_cmd_handler(call: types.CallbackQuery):
             await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def admin_command_help(update: [types.Message, types.CallbackQuery]):
@@ -78,10 +79,8 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             await message_or_call.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
         await message_or_call.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
-
-
-
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def command_db_extra(call: types.CallbackQuery):
@@ -103,7 +102,8 @@ async def command_db_extra(call: types.CallbackQuery):
             await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def players_list(call: types.CallbackQuery):
@@ -124,7 +124,8 @@ async def players_list(call: types.CallbackQuery):
             await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def send_month_guild_grafic(call: types.CallbackQuery):
@@ -141,7 +142,8 @@ async def send_month_guild_grafic(call: types.CallbackQuery):
                     f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def send_year_guild_graphic(call: types.CallbackQuery):
@@ -160,7 +162,8 @@ async def send_year_guild_graphic(call: types.CallbackQuery):
             await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def check_ids(call: types.CallbackQuery):
