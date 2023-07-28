@@ -96,8 +96,8 @@ async def process_tg_id(message: types.Message, state: FSMContext):
         await state.finish()
 
 
-async def cancel_add_player(call: types.CallbackQuery, state: FSMContext):
-    """Завершает сиквенцию добавления персонажа"""
+async def cancel_state(call: types.CallbackQuery, state: FSMContext):
+    """Завершает сиквенцию"""
     await state.finish()
     await call.message.answer("Добавление персонажа отменено.")
 
@@ -108,5 +108,5 @@ def register_handlers_add_player(dp: Dispatcher):
     dp.register_message_handler(process_player_name, state=AddPlayer.player_name)
     dp.register_message_handler(process_tg_nic, state=AddPlayer.tg_nic)
     dp.register_message_handler(process_tg_id, state=AddPlayer.tg_id)
-    dp.register_callback_query_handler(cancel_add_player, text="cancel",
+    dp.register_callback_query_handler(cancel_state, text="cancel",
                                        state=AddPlayer.all_states)  # Обработчик кнопки отмены

@@ -7,7 +7,7 @@ from apscheduler.triggers.cron import CronTrigger
 import apsched
 import settings
 from aiogram.utils import executor
-from handlers import member, admin, player_data, send_group_message, developer, send_message_everyone, add_player_state, reid_points_state, delete_player_state
+from handlers import member, admin, player_data, send_group_message, developer, send_message_everyone, add_player_state, reid_points_state, delete_player_state, delete_player_db_state
 from create_bot import dp, bot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
@@ -19,7 +19,6 @@ load_dotenv()
 async def on_startup(_):  # функция настроек старта бота.
     print("Бот вышел в онлайн")
     logging.info("Бот вышел в онлайн")
-    # await settings.create_tables()
     scheduler = AsyncIOScheduler(timezone=os.environ.get("TIME_ZONE", "UTC"))
     scheduler.add_job(apsched.check_guild_points, 'cron', hour=int(os.environ.get("REMIND_GUILD_POINTS_HOUR", 14)),
                       minute=int(os.environ.get("REMIND_GUILD_POINTS_MINUTES", 30)),
@@ -41,6 +40,7 @@ player_data.register_handlers_player(dp)
 reid_points_state.register_handlers_reid(dp)
 add_player_state.register_handlers_add_player(dp)
 delete_player_state.register_handlers_delete_player(dp)
+delete_player_db_state.register_handlers_delete_db_player(dp)
 send_group_message.register_handlers_group_message(dp)
 send_message_everyone.register_handlers_message_all(dp)
 

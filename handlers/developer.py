@@ -32,7 +32,8 @@ async def developer_commands(call: types.CallbackQuery, state: FSMContext):
             await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 # async def developer_commands(call: types.CallbackQuery, state: FSMContext):
 #     """Выводит инфо о командах разработчика"""
@@ -55,31 +56,31 @@ async def developer_commands(call: types.CallbackQuery, state: FSMContext):
 #             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
-async def del_db_player(message: types.Message):
-    """Удаляет все записи из баз данных об игроке"""
-    is_guild_member = message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, message.from_user, message.chat)
-    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    tg_id = member['user']['id']
-    super_admin = await is_super_admin(tg_id)
-    if is_guild_member:
-        if admin and super_admin:
-            try:
-                player_name = message.get_args()  # Получаем имя игрока
-                if not player_name:
-                    await message.reply("Пожалуйста, предоставьте имя игрока.")
-                    return
-                mes = await delete_db_player_data(player_name)
-                if mes:
-                    await bot.send_message(message.chat.id,
-                                           f"Записи игрока {mes} безвозвратно удалены из базы данных ⚰️\n"
-                                           f"Поделом засранцу! 👹")
-            except Exception as e:
-                await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-        else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+# async def del_db_player(message: types.Message):
+#     """Удаляет все записи из баз данных об игроке"""
+#     is_guild_member = message.conf.get('is_guild_member', False)
+#     admin = await is_admin(bot, message.from_user, message.chat)
+#     member = await bot.get_chat_member(message.chat.id, message.from_user.id)
+#     tg_id = member['user']['id']
+#     super_admin = await is_super_admin(tg_id)
+#     if is_guild_member:
+#         if admin and super_admin:
+#             try:
+#                 player_name = message.get_args()  # Получаем имя игрока
+#                 if not player_name:
+#                     await message.reply("Пожалуйста, предоставьте имя игрока.")
+#                     return
+#                 mes = await delete_db_player_data(player_name)
+#                 if mes:
+#                     await bot.send_message(message.chat.id,
+#                                            f"Записи игрока {mes} безвозвратно удалены из базы данных ⚰️\n"
+#                                            f"Поделом засранцу! 👹")
+#             except Exception as e:
+#                 await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+#         else:
+#             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
 
 def register_handlers_developer(dp: Dispatcher):
     dp.register_callback_query_handler(developer_commands, text='developer')
-    dp.register_message_handler(del_db_player, commands=['del_player'])
+    # dp.register_message_handler(del_db_player, commands=['del_player'])

@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from sqlalchemy import select
 
 from create_bot import bot
-from handlers.add_player_state import get_keyboard, cancel_add_player
+from handlers.add_player_state import get_keyboard, cancel_state
 from settings import async_session_maker
 from src.player import Player
 from src.utils import get_new_day_start, is_admin
@@ -89,5 +89,5 @@ def register_handlers_group_message(dp: Dispatcher):
     dp.register_callback_query_handler(start_group_command, text='group')
     dp.register_message_handler(process_users, state=Form.users)
     dp.register_message_handler(process_message, state=Form.message)
-    dp.register_callback_query_handler(cancel_add_player, text="cancel",
+    dp.register_callback_query_handler(cancel_state, text="cancel",
                                        state=Form.all_states)  # Обработчик кнопки отмены
