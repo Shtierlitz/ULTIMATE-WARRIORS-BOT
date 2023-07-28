@@ -1,20 +1,12 @@
+# handlers/reid_points_state.py
+
 from aiogram import types, Dispatcher
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import CallbackQuery
 
 from src.player import PlayerScoreService
 
 
-class RaidState(StatesGroup):
-    RaidPoints = State()  # состояние, когда пользователь выбирает "Сегодня"
-    RaidPointsAll = State()  # состояние, когда пользователь выбирает "Месяц"
-    RaidLazy = State()  # состояние, когда пользователь выбирает "Летняи"
-    RaidLazyYeserday = State()  # Вчера
-
-
-# @dp.message_handler(commands=['start'])
-async def start_cmd_handler(message: types.Message, state: FSMContext):
+async def start_cmd_handler(message: types.Message):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.add(types.InlineKeyboardButton("✴️Энка за сегодня", callback_data='raid_points'))
     keyboard.add(types.InlineKeyboardButton("⌛️Энка за месяц", callback_data='raid_points_all'))
@@ -23,27 +15,22 @@ async def start_cmd_handler(message: types.Message, state: FSMContext):
     await message.answer("🔋Энка сервис🔋", reply_markup=keyboard)
 
 
-async def raid_points_handler(call: CallbackQuery, state: FSMContext):
-
-    await RaidState.RaidPoints.set()
+async def raid_points_handler(call: CallbackQuery):
     message_strings = await PlayerScoreService.get_raid_scores()
     await call.message.answer(message_strings)
 
 
-async def raid_points_all_handler(call: CallbackQuery, state: FSMContext):
-    await RaidState.RaidPointsAll.set()
+async def raid_points_all_handler(call: CallbackQuery):
     message_strings = await PlayerScoreService.get_raid_scores_all()
     await call.message.answer(message_strings)
 
 
-async def raid_lazy_handler(call: CallbackQuery, state: FSMContext):
-    await RaidState.RaidLazy.set()
+async def raid_lazy_handler(call: CallbackQuery):
     message_strings = await PlayerScoreService.get_reid_lazy_fools()
     await call.message.answer(message_strings)
 
 
-async def raid_lazy_yesterday_handler(call: CallbackQuery, state: FSMContext):
-    await RaidState.RaidLazy.set()
+async def raid_lazy_yesterday_handler(call: CallbackQuery):
     message_strings = await PlayerScoreService.get_reid_lazy_fools(yesterday=True)
     await call.message.answer(message_strings)
 

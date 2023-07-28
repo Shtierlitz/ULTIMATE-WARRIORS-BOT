@@ -109,6 +109,8 @@ async def get_player_gp_graphic(player_name, period):
     )
 
     fig.update_xaxes(
+        tickangle=45,
+        nticks=len(x_values),
         tickformat="%d-%m"
     )
 
@@ -120,9 +122,9 @@ async def get_player_gp_graphic(player_name, period):
 
 
 async def get_month_player_graphic(player_name: str) -> io.BytesIO or None:
-    """Создает график рейдов игрока"""
+    """Создает график энки игрока за месяц"""
 
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'ids.json')
+    file_path = os.path.join(os.path.dirname(__file__), '..', os.environ.get("IDS_JSON"))
     if os.path.exists(file_path):
         with open(file_path, "r", encoding='utf-8') as json_file:
             data = json.load(json_file)
@@ -177,6 +179,8 @@ async def get_month_player_graphic(player_name: str) -> io.BytesIO or None:
     )
 
     fig.update_xaxes(
+        tickangle=45,
+        nticks=len(update_times),
         tickformat="%d-%m"
     )
 
@@ -281,6 +285,8 @@ async def get_guild_galactic_power(period: str) -> io.BytesIO:
     )
 
     fig.update_xaxes(
+        tickangle=45,
+        nticks=len(x_values),
         tickformat="%d-%m"
     )
 
@@ -334,6 +340,8 @@ async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool 
     )
 
     fig.update_xaxes(
+        tickangle=45,
+        nticks=len(update_times),
         tickformat="%d-%m"
     )
 
