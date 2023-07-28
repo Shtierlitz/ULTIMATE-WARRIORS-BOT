@@ -232,9 +232,11 @@ class PlayerData:
             {"description": "Очков лиги в сезоне", "value": data_dict['season_league_score']},
             {"description": "Повышений в сезоне", "value": data_dict['season_promotions_earned']},
             {"description": "Ссылка на swgoh", "value": data_dict['url']},
-            {"description": "Последнее обновление базы", "value": data_dict['update_time'].strftime('%d.%m.%y : %H.%M')},
-            {"description": "Последнее обновление на swgoh", "value": data_dict['last_swgoh_updated'].strftime('%d.%m.%y : %H.%M')}
-            ]
+            {"description": "Последнее обновление базы",
+             "value": data_dict['update_time'].strftime('%d.%m.%y : %H.%M')},
+            {"description": "Последнее обновление на swgoh",
+             "value": data_dict['last_swgoh_updated'].strftime('%d.%m.%y : %H.%M')}
+        ]
 
         new_string = "👀Полные данные об игроке👀\n\n"
         for item in output_structure:
@@ -426,9 +428,8 @@ class PlayerScoreService:
             scores = [f"{index + 1}. {name}: {player_points}" for index, (name, player_points) in
                       enumerate(sorted_players)]
 
-
         scores.insert(0,
-                      f"\n{'Список отстающих' if least else 'Список лидеров'} за {per}.\n\nДолжно быть по {points}\n")
+                      f"\n{'Список отстающих по энке' if least else 'Список лидеров по энке'} за {per}.\n\nДолжно быть по {points}\n")
 
         return f"\n{'-' * 30}\n".join(scores)
 

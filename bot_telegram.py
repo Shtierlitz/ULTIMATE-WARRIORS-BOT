@@ -2,13 +2,10 @@
 
 import os
 
-from apscheduler.triggers.cron import CronTrigger
-
 import apsched
-import settings
 from aiogram.utils import executor
 from handlers import member, admin, player_data, send_group_message, developer, send_message_everyone, add_player_state, reid_points_state, delete_player_state, delete_player_db_state
-from create_bot import dp, bot
+from create_bot import dp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 import logging

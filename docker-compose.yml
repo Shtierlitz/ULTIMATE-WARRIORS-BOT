@@ -27,7 +27,7 @@ services:
       environment:
         - APP_NAME=shtierlitz_comlinc
       ports:
-        - 3000:3000
+        - "3000:3000"
       networks:
         - app-network
 
