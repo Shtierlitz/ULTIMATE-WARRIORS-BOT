@@ -27,25 +27,46 @@ COMMANDS = {
 }
 
 
-async def player_cmd_handler(call: types.CallbackQuery, state: FSMContext):
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Добавить игрока в бот", callback_data='add_player'))
-    keyboard.add(types.InlineKeyboardButton("🗓 Список всех", callback_data='players_list'))
-    keyboard.add(types.InlineKeyboardButton("🔪 Удалить игрока из бота", callback_data='delete_player'))
-    await call.message.answer("Служба по игрокам", reply_markup=keyboard)
+async def player_cmd_handler(call: types.CallbackQuery):
+    is_guild_member = call.message.conf.get('is_guild_member', False)
+    admin = await is_admin(bot, call.from_user, call.message.chat)
+    member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
+    tg_id = member['user']['id']
+    super_admin = await is_super_admin(tg_id)
+    if is_guild_member:
+        if admin and super_admin:
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Добавить игрока в бот", callback_data='add_player'))
+            keyboard.add(types.InlineKeyboardButton("🗓 Список всех", callback_data='players_list'))
+            keyboard.add(types.InlineKeyboardButton("🔪 Удалить игрока из бота", callback_data='delete_player'))
+            await call.message.answer("Служба по игрокам", reply_markup=keyboard)
+        else:
+            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+    else:
+        await call.message.answer(
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
-async def admin_command_help(message: types.Message, state: FSMContext):
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(types.InlineKeyboardButton("✍🏻 Отправить групповое сообщение", callback_data='group'))
-    keyboard.add(types.InlineKeyboardButton("✉️ Отправить сообщение всем", callback_data='group_all'))
-    keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Запись/удаление игрока в бот", callback_data='players'))
-    keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за месяц", callback_data='guild_month'))
-    keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за год", callback_data='guild_year'))
-    keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление базы данных", callback_data='refresh'))
-    keyboard.add(
-        types.InlineKeyboardButton("☠️ Команды разработчика (Не влезай - убьет! ☠️", callback_data='developer'))
-    await message.answer("Панель Администрации", reply_markup=keyboard)
+async def admin_command_help(message: types.Message):
+    is_guild_member = message.conf.get('is_guild_member', False)
+    admin = await is_admin(bot, message.from_user, message.chat)
+    if is_guild_member:
+        if admin:
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton("✍🏻 Отправить групповое сообщение", callback_data='group'))
+            keyboard.add(types.InlineKeyboardButton("✉️ Отправить сообщение всем", callback_data='group_all'))
+            keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Запись/удаление игрока в бот", callback_data='players'))
+            keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за месяц", callback_data='guild_month'))
+            keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за год", callback_data='guild_year'))
+            keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление базы данных", callback_data='refresh'))
+            keyboard.add(
+                types.InlineKeyboardButton("☠️ Команды разработчика (Не влезай - убьет! ☠️", callback_data='developer'))
+            await message.answer("Панель Администрации", reply_markup=keyboard)
+        else:
+            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
+    else:
+        await message.answer(
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 # async def admin_command_help(message: types.Message):
@@ -65,7 +86,7 @@ async def admin_command_help(message: types.Message, state: FSMContext):
 #             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
 
 
-async def command_db_extra(call: types.CallbackQuery, state: FSMContext):
+async def command_db_extra(call: types.CallbackQuery):
     """Стартуем бот и обновляем БД"""
     is_guild_member = call.message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, call.from_user, call.message.chat)
@@ -87,7 +108,7 @@ async def command_db_extra(call: types.CallbackQuery, state: FSMContext):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
-async def players_list(call: types.CallbackQuery, state: FSMContext):
+async def players_list(call: types.CallbackQuery):
     """Отправляет содержимое файла ids.json в чат"""
     is_guild_member = call.message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, call.from_user, call.message.chat)
@@ -108,7 +129,7 @@ async def players_list(call: types.CallbackQuery, state: FSMContext):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
-async def send_month_guild_grafic(call: types.CallbackQuery, state: FSMContext):
+async def send_month_guild_grafic(call: types.CallbackQuery):
     """Отправляет график мощи гильдии"""
     is_guild_member = call.message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, call.from_user, call.message.chat)
@@ -125,7 +146,7 @@ async def send_month_guild_grafic(call: types.CallbackQuery, state: FSMContext):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
-async def send_year_guild_graphic(call: types.CallbackQuery, state: FSMContext):
+async def send_year_guild_graphic(call: types.CallbackQuery):
     """Отправляет график рейда игрока"""
     is_guild_member = call.message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, call.from_user, call.message.chat)
@@ -144,7 +165,7 @@ async def send_year_guild_graphic(call: types.CallbackQuery, state: FSMContext):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
-async def check_ids(call: types.CallbackQuery, state: FSMContext):
+async def check_ids(call: types.CallbackQuery):
     is_guild_member = call.message.conf.get('is_guild_member', False)
     admin = await is_admin(bot, call.from_user, call.message.chat)
     if is_guild_member:
