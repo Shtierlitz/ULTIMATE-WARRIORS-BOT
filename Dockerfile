@@ -1,19 +1,25 @@
 FROM python:3.10
+
+# Set environment variables
 ENV PYTHONDONTWRITEBITECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV TZ=Europe/Moscow
 
-RUN apt-get update
-RUN apt-get upgrade -y
-RUN apt-get install -y postgresql gcc python3-dev musl-dev
-RUN apt-get install -y vim
+# Install system dependencies
+RUN apt-get update && apt-get upgrade -y && apt-get install -y postgresql gcc python3-dev musl-dev vim tzdata
 
-RUN pip install --upgrade pip
+# Set system timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools
 
 WORKDIR /app
 COPY requirements.txt requirements.txt
-
-RUN pip install --upgrade setuptools
 RUN pip install -r requirements.txt
 
-RUN chmod 755 .
+# Copy project
 COPY . /app
+
+# Set permissions
+RUN chmod 755 .
