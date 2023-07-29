@@ -37,7 +37,7 @@ services:
   bot:
     build: .
     command: >
-      bash -c "sleep 10 && alembic upgrade head && python bot_telegram.py"
+      bash -c "python bot_telegram.py"
     restart: always
     depends_on:
       pg_db:
