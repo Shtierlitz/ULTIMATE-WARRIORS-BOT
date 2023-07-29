@@ -13,7 +13,8 @@ Base = declarative_base()
 
 # Создание движка SQLAlchemy для взаимодействия с базой данных PostgreSQL
 engine = create_async_engine(
-    f'postgresql+asyncpg://{os.environ.get("DB_USER")}:{os.environ.get("DB_PASS")}@host.docker.internal/{os.environ.get("DB_NAME")}')
+    f'postgresql+asyncpg://{os.environ.get("DB_USER")}:{os.environ.get("DB_PASS")}@pg_db/{os.environ.get("DB_PROD_NAME")}')
+
 
 # Создание всех таблиц в базе данных
 # Обратите внимание, что операция создания всех таблиц в базе данных должна быть обернута в асинхронную функцию

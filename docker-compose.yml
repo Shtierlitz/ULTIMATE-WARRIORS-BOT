@@ -2,7 +2,7 @@ version: "3.9"
 services:
   pg_db:
     container_name: pg_db
-    image: postgres:14.7-alpine
+    image: postgres:15.2-alpine
     env_file:
       - ./.env
     volumes:
@@ -13,12 +13,14 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 30s
       timeout: 30s
       retries: 3
+    networks:
+      - app-network
 
   comlink:
       image: ghcr.io/swgoh-utils/swgoh-comlink:latest
@@ -34,9 +36,8 @@ services:
 
   bot:
     build: .
-    command: python bot_telegram.py
-    env_file:
-      - ./.env
+    command: >
+      bash -c "sleep 10 && alembic upgrade head && python bot_telegram.py"
     restart: always
     depends_on:
       pg_db:
@@ -45,6 +46,9 @@ services:
         condition: service_started
     networks:
       - app-network
+    environment:
+      - SQLALCHEMY_DATABASE_URI=postgresql+asyncpg://postgres:Generosity007@pg_db/ultimate_warriors
+
 
 networks:
   app-network:

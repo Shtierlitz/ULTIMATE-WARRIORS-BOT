@@ -71,7 +71,9 @@ def split_list(input_list: list, parts: int = 5) -> list:
 
 def get_new_day_start() -> datetime:
     """Возвращает начало нового дня установленного в .env файле (16:30 по умолчанию."""
-    now = datetime.now()
+    moscow_tz = pytz.timezone(os.environ.get('TIME_ZONE'))
+    naive_now = datetime.now(moscow_tz)
+    now = naive_now.replace(tzinfo=None)
     today = now.date()
     new_day_start = datetime.combine(today, time(int(os.environ.get("DAY_UPDATE_HOUR", "16")),
                                                  int(os.environ.get("DAY_UPDATE_MINUTES", "30"))))
