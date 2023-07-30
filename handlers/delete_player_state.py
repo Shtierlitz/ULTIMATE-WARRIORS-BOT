@@ -1,12 +1,13 @@
 # handlers/delete_player_state.py
+
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton
 
-from create_bot import bot
+
 from handlers.add_player_state import get_keyboard
-from src.utils import is_admin, is_super_admin, delete_player_from_ids, is_member_admin_super
+from src.utils import delete_player_from_ids, is_member_admin_super
 
 
 class DeletePlayer(StatesGroup):

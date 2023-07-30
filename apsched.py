@@ -10,15 +10,10 @@ from src.utils import get_new_day_start, send_points_message
 from src.player import Player, PlayerData, PlayerScoreService, PlayerPowerService
 from datetime import datetime, timedelta
 from sqlalchemy import and_, select, cast, Integer
-from dotenv import load_dotenv
-
-
-load_dotenv()
 
 
 async def check_guild_points(*args, **kwargs):
     try:
-
         message_list_ru = [
             "ну камон. Сдай энку вовремя! У тебя",
             "Большой брат следит за твоей энкой. Офицеры уже оповещены, что у тебя всего",

@@ -9,14 +9,6 @@ from handlers import member, admin, player_data, send_group_message, developer, 
 from create_bot import dp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
-from dotenv import load_dotenv
-
-is_dev = os.environ.get('IS_DEV', default=False)
-load_dotenv()
-if is_dev:
-    load_dotenv(".env_dev")
-else:
-    load_dotenv(".env")
 
 
 async def on_startup(_):  # функция настроек старта бота.

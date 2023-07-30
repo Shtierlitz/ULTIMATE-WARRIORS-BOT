@@ -18,9 +18,6 @@ from settings import async_session_maker
 from src.errors import AddIdsError
 from src.utils import get_new_day_start, format_scores, get_localized_datetime, get_end_date
 from sqlalchemy import select, delete, func
-from dotenv import load_dotenv
-
-
 
 
 HOURS, MINUTES = int(os.environ.get('DAY_UPDATE_HOUR', 16)), int(os.environ.get('DAY_UPDATE_MINUTES', 30))

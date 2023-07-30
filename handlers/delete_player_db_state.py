@@ -1,11 +1,12 @@
 # delete_player_db_state.py
+
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from create_bot import bot
 from handlers.add_player_state import get_keyboard, cancel_state
-from src.utils import is_admin, is_super_admin, delete_db_player_data, is_member_admin_super
+from src.utils import delete_db_player_data, is_member_admin_super
 
 
 class DeletePlayerDB(StatesGroup):

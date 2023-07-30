@@ -7,12 +7,15 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 import os
 from dotenv import load_dotenv
 
-is_dev = os.environ.get('IS_DEV', default=False)
-load_dotenv()
-if is_dev:
-    load_dotenv(".env_dev")
+load_dotenv(".env")  # загружаем общие переменные
+is_dev = os.getenv('IS_DEV', 'False').lower() in ['true', '1']  # получаем IS_DEV
+print(f'IS_DEV: {is_dev}')
+if not is_dev:
+    load_dotenv(".env_prod", override=True)  # загружаем переменные для prod
+    print('Loaded .env_prod')
 else:
-    load_dotenv(".env")
+    print('Loaded .env')
+
 
 # Создание базового класса модели
 Base = declarative_base()
