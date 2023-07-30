@@ -67,6 +67,7 @@ async def get_player_gp_graphic(player_name, period):
     ))
 
     fig.update_layout(
+        width=len(x_values)*100 if len(x_values) > 10 else 1200,
         title=f'<b>{player_name}\'s</b> galactic power per <b>{period}</b>',
         xaxis_title='Update Time',
         yaxis_title='Galactic Power',
@@ -110,7 +111,7 @@ async def get_player_gp_graphic(player_name, period):
 
     fig.update_xaxes(
         tickangle=45,
-        nticks=len(x_values),
+        tickvals=x_values,
         tickformat="%d-%m"
     )
 
@@ -167,6 +168,7 @@ async def get_month_player_graphic(player_name: str) -> io.BytesIO or None:
         textposition='top center'))
 
     fig.update_layout(
+        width=len(update_times) * 100 if len(update_times) > 10 else 1200,
         title=f'<b>Reid Points</b> Over Month for <b>{player_name}</b>',
         xaxis_title='Update Time',
         yaxis_title='Reid Points',
@@ -245,6 +247,7 @@ async def get_guild_galactic_power(period: str) -> io.BytesIO:
         textposition='top center'))
 
     fig.update_layout(
+        width=len(x_values) * 100 if len(x_values) > 10 else 1200,
         title=f'Raise <b>Guild</b> galactic power per <b>{period}</b>',
         xaxis_title='Update Time',
         yaxis_title='Galactic Power',
@@ -330,6 +333,7 @@ async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool 
         textposition='top center'))
 
     fig.update_layout(
+        width=len(update_times) * 100 if len(update_times) > 10 else 1200,
         title=f'<b>{player_name}\'s Arena Rank</b> Over <b>{period.capitalize()}</b>' if not is_fleet else f'<b>{player_name}\'s Fleet Arena Rank</b> Over <b>{period.capitalize()}</b>',
         xaxis_title='Update Time',
         yaxis_title='Rank',
