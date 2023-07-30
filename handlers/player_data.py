@@ -7,14 +7,11 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from middlewares.user_check import guild_members
 from src.graphics import get_player_gp_graphic, get_player_rank_graphic, get_month_player_graphic
 from src.player import PlayerData
-from src.guild import GuildData
 from create_bot import bot
-from settings import async_session_maker
 from keyboards.players_kb import create_keyboard, create_player_info_keyboard
-from sqlalchemy import func, select
-from datetime import date
 from db_models import Player
-from src.utils import get_new_day_start, get_player_by_name_or_nic
+from src.utils import get_player_by_name_or_nic
+from typing import Union, Optional
 
 
 class PlayerState(StatesGroup):
@@ -32,14 +29,23 @@ async def cancel_handler(message: types.Message, state: FSMContext):
             await message.answer('Отменено', reply_markup=types.ReplyKeyboardRemove())
 
 
-async def player_buttons(call: types.CallbackQuery):
-    user_id = str(call.from_user.id)
+async def player_buttons(call: Union[types.CallbackQuery, types.Message], state: Optional[FSMContext] = None):
+    if isinstance(call, types.CallbackQuery):
+        user_id = str(call.from_user.id)
+        message = call.message
+    elif isinstance(call, types.Message):
+        user_id = str(call.from_user.id)
+        message = call
+    else:
+        raise ValueError("call должен быть типа CallbackQuery или Message")
+
     is_guild_member = any(
         user_id in member.values() for dictionary in guild_members for member in dictionary.values())
     if is_guild_member:
         kb = await create_keyboard()  # Создать клавиатуру
-        await call.message.reply("Выберете члена гильдии.", reply_markup=kb)  # Отправить сообщение с клавиатурой
-        await PlayerState.player_name.set()
+        await message.reply("Выберете члена гильдии.", reply_markup=kb)  # Отправить сообщение с клавиатурой
+        if state:
+            await PlayerState.player_name.set()
 
 
 async def player_info_buttons(message: types.Message, state: FSMContext):
@@ -92,7 +98,7 @@ async def player_data_info(message: types.Message, state: FSMContext):
         "📊 флот за месяц": (get_player_rank_graphic, (player.name, 'month', True)),
         "📊 пешка за все время": (get_player_rank_graphic, (player.name, 'year', False)),
         "📊 флот за все время": (get_player_rank_graphic, (player.name, 'year', True)),
-        "📊 энка за месяц": (get_month_player_graphic, (player.name, ))  # передаем имя игрока напрямую, а не в кортеже
+        "📊 энка за месяц": (get_month_player_graphic, (player.name,))  # передаем имя игрока напрямую, а не в кортеже
     }
 
     if key in graphic_keys:
@@ -102,7 +108,7 @@ async def player_data_info(message: types.Message, state: FSMContext):
             return await bot.send_photo(chat_id=message.chat.id, photo=image)
         except Exception as e:
             return await message.reply(f"Произошла ошибка при построении графика: \n\n❌❌{e}❌❌\n\n"
-                                       f"Возможно у вас просто первый день и данных езе нет в базе за 2-3 дня хотябы.\n"
+                                       f"Возможно у вас просто первый день и данных езе нет в базе за 2-3 дня хотя бы.\n"
                                        f"Если это так, то просто подождите пару дней.")
     if key == '🗒Все данные':
         all_data = await PlayerData().extract_data(player)
@@ -142,7 +148,7 @@ async def back_handler(message: types.Message, state: FSMContext):
             await PlayerState.initial_state.set()
             await message.answer('Вернулись к началу', reply_markup=types.ReplyKeyboardRemove())
             # Добавьте вызов функции, которая обрабатывает начальное состояние
-            await player_buttons(message, state)
+            await player_buttons(message)
         else:
             await state.finish()
 

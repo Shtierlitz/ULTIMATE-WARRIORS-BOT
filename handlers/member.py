@@ -1,34 +1,10 @@
 # handlers/member.py
-import os
 
-from aiogram.dispatcher import FSMContext
-from sqlalchemy import select
-
-from src.utils import gac_statistic, get_new_day_start, is_admin
-from src.player import PlayerData, PlayerScoreService, PlayerPowerService
+from src.utils import gac_statistic
+from src.player import PlayerPowerService
 from src.guild import GuildData
 from create_bot import bot
-from settings import async_session_maker
 from aiogram import types, Dispatcher
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-from db_models import Player
-
-
-GROUP_CHAT_ID = os.environ.get("GROUP_ID")
-COMMANDS = {
-    "start": "Получить информацию о доступных командах",
-    "player": "Открыть панель кнопок где можно получить информацию по согильдийцу",
-    "gac": "Получить полную статистику по регистрации на ВА с сылками на возможных соперников",
-    "reid": "Контроль энки",
-    "gp_all": "Список роста всей галактической мощи за календарный месяц",
-    "guildinfo": "Инфа о гильдии",
-    "admin": "Список команд администраторов",
-
-    # Добавьте здесь другие команды по мере необходимости
-}
 
 
 async def command_start(message: types.Message):
@@ -45,10 +21,12 @@ async def command_start(message: types.Message):
             await message.answer("🧑🏻‍🌾 Панель Пользователей 👨🏻‍🌾", reply_markup=keyboard)
         except Exception as e:
             print(e)
-            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\n"
+                                f"Обратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
     else:
         await message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\n"
+            "Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def command_gac_statistic(call: types.CallbackQuery):
@@ -64,10 +42,13 @@ async def command_gac_statistic(call: types.CallbackQuery):
             await bot.send_message(call.message.chat.id, text=st_4, parse_mode="Markdown")
             await bot.send_message(call.message.chat.id, text=st_5, parse_mode="Markdown")
         except Exception as e:
-            await call.message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await call.message.reply(
+                f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\n"
+            "Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+
 
 # async def get_user_data(call: types.CallbackQuery):
 #     """"""
@@ -84,7 +65,8 @@ async def command_gac_statistic(call: types.CallbackQuery):
 #             player_str_list = await PlayerData().extract_data(player)
 #             await bot.send_message(call.message.chat.id, player_str_list)
 #         except Exception as e:
-#             await call.message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+#             await call.message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\n"
+#                                      f"Обратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
 
 
 async def get_guild_info(call: types.CallbackQuery):
@@ -95,10 +77,12 @@ async def get_guild_info(call: types.CallbackQuery):
             info_text = "\n".join(guild_info)
             await bot.send_message(call.message.chat.id, info_text)
         except Exception as e:
-            await call.message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await call.message.reply(
+                f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\n"
+            "Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def get_gp_all(call: types.CallbackQuery):
@@ -109,10 +93,13 @@ async def get_gp_all(call: types.CallbackQuery):
             message_strings = await PlayerPowerService.get_galactic_power_all()
             await bot.send_message(call.message.chat.id, message_strings)
         except Exception as e:
-            await call.message.reply(f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+            await call.message.reply(
+                f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена.\n"
+            "Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+
 
 def register_handlers_member(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start'])

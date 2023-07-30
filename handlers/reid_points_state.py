@@ -63,8 +63,6 @@ async def raid_lazy_yesterday_handler(call: CallbackQuery):
     if is_guild_member:
         message_strings = await PlayerScoreService.get_reid_lazy_fools('yesterday')
         await call.message.answer(message_strings)
-        new = await PlayerScoreService.get_least_reid_lazy_fools()
-        print(new)
     else:
         await call.message.answer(
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
@@ -81,6 +79,7 @@ async def raid_lazy_week_handler(call: CallbackQuery):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
             "Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
+
 async def raid_lazy_month_handler(call: CallbackQuery):
     is_guild_member = call.message.conf.get('is_guild_member', False)
     if is_guild_member:
@@ -91,6 +90,7 @@ async def raid_lazy_month_handler(call: CallbackQuery):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
             "Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
+
 async def raid_top_week_handler(call: CallbackQuery):
     is_guild_member = call.message.conf.get('is_guild_member', False)
     if is_guild_member:
@@ -100,6 +100,7 @@ async def raid_top_week_handler(call: CallbackQuery):
         await call.message.answer(
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
             "Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+
 
 async def raid_top_month_handler(call: CallbackQuery):
     is_guild_member = call.message.conf.get('is_guild_member', False)

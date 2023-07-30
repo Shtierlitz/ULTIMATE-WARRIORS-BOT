@@ -6,7 +6,7 @@ from aiogram.types import InlineKeyboardButton
 
 from create_bot import bot
 from handlers.add_player_state import get_keyboard
-from src.utils import is_admin, is_super_admin, delete_player_from_ids
+from src.utils import is_admin, is_super_admin, delete_player_from_ids, is_member_admin_super
 
 
 class DeletePlayer(StatesGroup):
@@ -16,13 +16,7 @@ class DeletePlayer(StatesGroup):
 
 async def start_delete_player(call: types.CallbackQuery, state: FSMContext):
     """Начинает сиквенцию"""
-    is_guild_member =call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
-    member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
-    tg_id = member['user']['id']
-    super_admin = await is_super_admin(tg_id)
-    print(is_guild_member)
-    print(super_admin)
+    is_guild_member, admin, super_admin = await is_member_admin_super(call, super_a=True)
     if is_guild_member:
         if admin and super_admin:
             keyboard = get_keyboard()
@@ -35,11 +29,7 @@ async def start_delete_player(call: types.CallbackQuery, state: FSMContext):
 
 
 async def delete_player_name(message: types.Message, state: FSMContext):
-    is_guild_member = message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, message.from_user, message.chat)
-    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    tg_id = member['user']['id']
-    super_admin = await is_super_admin(tg_id)
+    is_guild_member, admin, super_admin = await is_member_admin_super(message=message, super_a=True)
     if is_guild_member:
         if admin and super_admin:
             try:
@@ -61,11 +51,7 @@ async def delete_player_name(message: types.Message, state: FSMContext):
 
 
 async def delete_player_process(call: types.CallbackQuery, state: FSMContext):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
-    member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
-    tg_id = member['user']['id']
-    super_admin = await is_super_admin(tg_id)
+    is_guild_member, admin, super_admin = await is_member_admin_super(call, super_a=True)
     if is_guild_member:
         if admin and super_admin:
             try:

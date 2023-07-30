@@ -283,14 +283,19 @@ async def delete_db_player_data(val):
             select(Player).filter_by(name=val))
         player_records = player_records.scalars().all()
         if len(player_records) == 0:
-            async with async_session_maker() as session:
-                player_records = await session.execute(
-                    select(Player).filter_by(ally_code=int(val)))
-                player_records = player_records.scalars().all()
-                if len(player_records) == 0:
-                    bot.send_message(os.environ.get('OFFICER_CHAT_ID', f"Игрок с значением {val} отсутствует\n"
-                                                                       f"Проверьте правильность написания имени или кода союзника"))
-                    return
+            try:
+                async with async_session_maker() as session:
+                    player_records = await session.execute(
+                        select(Player).filter_by(ally_code=int(val)))
+                    player_records = player_records.scalars().all()
+                    if len(player_records) == 0:
+                        await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"Игрок с значением {val} отсутствует\n"
+                                                                           f"Проверьте правильность написания имени или кода союзника")
+                        return
+            except Exception as e:
+                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"Игрок с значением {val} отсутствует\n"
+                                                                          f"Проверьте правильность написания имени или кода союзника")
+                return
     player_name: str = player_records[0].name
     for player in player_records:
         async with async_session_maker() as session:
@@ -298,6 +303,7 @@ async def delete_db_player_data(val):
             await session.commit()
 
     return player_name
+
 
 
 async def send_points_message(player: Player, speach_list: list, rus: bool):
@@ -379,3 +385,23 @@ async def is_super_admin(tg_id: str):
     if tg_id in eng_members_list:
         return True
     return False
+
+
+async def is_member_admin_super(call: types.CallbackQuery = None, super_a: bool = False, message: types.Message = None):
+    if message:
+        is_guild_member = message.conf.get('is_guild_member', False)
+        admin = await is_admin(bot, message.from_user, message.chat)
+        member = await bot.get_chat_member(message.chat.id, message.from_user.id)
+        tg_id = member['user']['id']
+        super_admin = await is_super_admin(tg_id)
+        if super_a:
+            return is_guild_member, admin, super_admin
+        return is_guild_member, admin
+    is_guild_member = call.message.conf.get('is_guild_member', False)
+    admin = await is_admin(bot, call.from_user, call.message.chat)
+    member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
+    tg_id = member['user']['id']
+    super_admin = await is_super_admin(tg_id)
+    if super_a:
+        return is_guild_member, admin, super_admin
+    return is_guild_member, admin

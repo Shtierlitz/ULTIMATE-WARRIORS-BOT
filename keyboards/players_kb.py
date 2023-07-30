@@ -43,7 +43,7 @@ async def create_player_info_keyboard(player_name: str):
 
     if player:
         keyboard.row(KeyboardButton("🔙Назад"),
-                     KeyboardButton("Отмена❌"))  # Создать отдельную строку для кнопки "cencel"
+                     KeyboardButton("Отмена❌"))
         keyboard.row(KeyboardButton("🗒Все данные"))
         keyboard.row(KeyboardButton("📊 энка за месяц"))
         keyboard.row(KeyboardButton("📊 ГМ за месяц"), KeyboardButton("📊 ГМ за все время"))

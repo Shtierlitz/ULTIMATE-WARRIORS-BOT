@@ -1,38 +1,20 @@
 # handlers/admin.py
+
 from aiogram import types, Dispatcher
-from aiogram.dispatcher import FSMContext
 
 from create_bot import bot
 import io
-import json
 import os
 
-from src.graphics import get_month_player_graphic, get_guild_galactic_power
+from src.graphics import get_guild_galactic_power
 from src.guild import GuildData
 from src.player import PlayerData
-from src.utils import split_list, get_players_list_from_ids, add_player_to_ids, \
-    delete_player_from_ids, check_guild_players, is_admin, is_super_admin
-
-COMMANDS = {
-    "admin": "Получить информацию о доступных командах администратора ⚙⚒",
-    "group": "Сиквенция отправки групового сообщения",
-    "group_all": "Сиквенция отправки сообщения всем",
-    "players": "Сиквенция для записи/удаления  игрока в бот.\nЕсли нету тг ID или tg_nic то вместо пишите исключительно - null",
-    "guild_month": "Выводит график ГМ гильдии за месяц",
-    "guild_year": "Выводит график роста ГМ гильдии за год",
-    "refresh": "Экстреннее обновление базы данных",
-
-    "developer": "Получить информацию о доступных командах разработчика (Не влезай - убьет! ☠️)"
-    # Добавьте здесь другие команды по мере необходимости
-}
+from src.utils import get_players_list_from_ids, \
+    check_guild_players, is_admin, is_member_admin_super
 
 
 async def player_cmd_handler(call: types.CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
-    member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
-    tg_id = member['user']['id']
-    super_admin = await is_super_admin(tg_id)
+    is_guild_member, admin, super_admin = await is_member_admin_super(call, super_a=True)
     if is_guild_member:
         if admin and super_admin:
             keyboard = types.InlineKeyboardMarkup()
@@ -85,8 +67,7 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
 
 async def command_db_extra(call: types.CallbackQuery):
     """Стартуем бот и обновляем БД"""
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
+    is_guild_member, admin = await is_member_admin_super(call)
     if is_guild_member:
         if admin:
             try:
@@ -108,8 +89,7 @@ async def command_db_extra(call: types.CallbackQuery):
 
 async def players_list(call: types.CallbackQuery):
     """Отправляет содержимое файла ids.json в чат"""
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
+    is_guild_member, admin = await is_member_admin_super(call)
     if is_guild_member:
         if admin:
             try:
@@ -130,8 +110,7 @@ async def players_list(call: types.CallbackQuery):
 
 async def send_month_guild_grafic(call: types.CallbackQuery):
     """Отправляет график мощи гильдии"""
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
+    is_guild_member, admin = await is_member_admin_super(call)
     if is_guild_member:
         if admin:
             try:
@@ -148,8 +127,7 @@ async def send_month_guild_grafic(call: types.CallbackQuery):
 
 async def send_year_guild_graphic(call: types.CallbackQuery):
     """Отправляет график рейда игрока"""
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
+    is_guild_member, admin = await is_member_admin_super(call)
     if is_guild_member:
         if admin:
             try:
@@ -167,8 +145,7 @@ async def send_year_guild_graphic(call: types.CallbackQuery):
 
 
 async def check_ids(call: types.CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
+    is_guild_member, admin = await is_member_admin_super(call)
     if is_guild_member:
         if admin:
             try:

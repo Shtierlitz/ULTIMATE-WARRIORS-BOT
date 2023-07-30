@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from create_bot import bot
 from handlers.add_player_state import get_keyboard, cancel_state
-from src.utils import is_admin, is_super_admin, delete_db_player_data
+from src.utils import is_admin, is_super_admin, delete_db_player_data, is_member_admin_super
 
 
 class DeletePlayerDB(StatesGroup):
@@ -14,11 +14,7 @@ class DeletePlayerDB(StatesGroup):
 
 async def start_del_player(call: types.CallbackQuery):
     """Запрошивает имя или код союзника для удаления из БД"""
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, call.from_user, call.message.chat)
-    member = await bot.get_chat_member(call.message.chat.id, call.from_user.id)
-    tg_id = member['user']['id']
-    super_admin = await is_super_admin(tg_id)
+    is_guild_member, admin, super_admin = await is_member_admin_super(call, super_a=True)
 
     if is_guild_member:
         if admin and super_admin:
@@ -36,11 +32,7 @@ async def start_del_player(call: types.CallbackQuery):
 async def del_player(message: types.Message, state: FSMContext):
     """Удаляет из бд"""
     player_name = message.text
-    is_guild_member = message.conf.get('is_guild_member', False)
-    admin = await is_admin(bot, message.from_user, message.chat)
-    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    tg_id = member['user']['id']
-    super_admin = await is_super_admin(tg_id)
+    is_guild_member, admin, super_admin = await is_member_admin_super(message=message, super_a=True)
     if is_guild_member:
         if admin and super_admin:
             try:
