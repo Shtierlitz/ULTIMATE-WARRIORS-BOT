@@ -12,15 +12,13 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y postgresql gcc py
 
 # Get timezone from the intermediate image
 COPY --from=tz /.env_tz /.env_tz
-RUN TZ=$(cat /.env_tz)
 
 # Set environment variables
 ENV PYTHONDONTWRITEBITECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV TZ
 
 # Set system timezone
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN export TZ=$(cat /.env_tz) && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools
