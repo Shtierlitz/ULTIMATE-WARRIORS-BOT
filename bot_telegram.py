@@ -4,13 +4,19 @@ import os
 
 import apsched
 from aiogram.utils import executor
-from handlers import member, admin, player_data, send_group_message, developer, send_message_everyone, add_player_state, reid_points_state, delete_player_state, delete_player_db_state
+from handlers import member, admin, player_data, send_group_message, developer, send_message_everyone, add_player_state, \
+    reid_points_state, delete_player_state, delete_player_db_state
 from create_bot import dp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from dotenv import load_dotenv
 import logging
+from dotenv import load_dotenv
 
+is_dev = os.environ.get('IS_DEV', default=False)
 load_dotenv()
+if is_dev:
+    load_dotenv(".env_dev")
+else:
+    load_dotenv(".env")
 
 
 async def on_startup(_):  # функция настроек старта бота.

@@ -73,6 +73,8 @@ async def command_db_extra(call: types.CallbackQuery):
             try:
                 await bot.send_message(call.message.chat.id,
                                        "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
+                is_dev = os.environ.get('IS_DEV', default=False)
+                print(is_dev)
                 await GuildData().build_db()
                 await PlayerData().update_players_data()
             except Exception as e:

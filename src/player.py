@@ -1,5 +1,5 @@
 # src/player.py
-import io
+
 import json
 import os
 from collections import defaultdict
@@ -8,30 +8,22 @@ from typing import List
 import aiohttp
 import pytz
 import requests
-from dateutil.relativedelta import relativedelta
 
 from datetime import datetime, timedelta, time
-import plotly.graph_objects as go
-import plotly.io as pio
 
 from create_bot import bot
-from db_models import Player, Guild
-from pytz import timezone
-from dotenv import load_dotenv
+from db_models import Player
 
 from settings import async_session_maker
-from src.errors import Status404Error, AddIdsError, DatabaseBuildError
+from src.errors import AddIdsError
 from src.utils import get_new_day_start, format_scores, get_localized_datetime, get_end_date
-from sqlalchemy import select, delete, func, text, cast, Float
+from sqlalchemy import select, delete, func
+from dotenv import load_dotenv
 
-load_dotenv()
+
+
 
 HOURS, MINUTES = int(os.environ.get('DAY_UPDATE_HOUR', 16)), int(os.environ.get('DAY_UPDATE_MINUTES', 30))
-
-# utc_tz = timezone('UTC')
-#
-# tz = str(os.environ.get("TIME_ZONE"))
-# time_tz = timezone(tz)
 
 API_LINK = f"{os.environ.get('API_HOST')}:{os.environ.get('API_PORT')}"
 GUILD_POST_DATA = {

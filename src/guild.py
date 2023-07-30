@@ -1,5 +1,5 @@
 # src/guild.py
-import logging
+
 import os
 
 import aiohttp
@@ -7,19 +7,16 @@ import pytz
 import requests
 from sqlalchemy import delete, select
 
-from settings import logger
 from settings import async_session_maker
 from datetime import datetime, timedelta
 
 from db_models import Guild
 from pytz import timezone
-from dotenv import load_dotenv
+
 
 from src.errors import Status404Error, DatabaseBuildError
 from src.utils import get_new_day_start, get_localized_datetime
 
-
-load_dotenv()
 
 utc_tz = timezone('UTC')
 

@@ -3,10 +3,16 @@
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
-from dotenv import load_dotenv
-import os
 
+import os
+from dotenv import load_dotenv
+
+is_dev = os.environ.get('IS_DEV', default=False)
 load_dotenv()
+if is_dev:
+    load_dotenv(".env_dev")
+else:
+    load_dotenv(".env")
 
 # Создание базового класса модели
 Base = declarative_base()
