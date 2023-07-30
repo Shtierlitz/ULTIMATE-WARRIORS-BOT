@@ -118,7 +118,7 @@ async def get_player_gp_graphic(player_name, period):
 
     fig.update_xaxes(
         tickangle=45,
-        nticks=len(x_values),
+        nticks=len(x_values)*2,
         tickformat="%d-%m"
     )
 
@@ -190,7 +190,7 @@ async def get_month_player_graphic(player_name: str) -> io.BytesIO or None:
 
     fig.update_xaxes(
         tickangle=45,
-        nticks=len(update_times),
+        nticks=len(update_times)*2,
         tickformat="%d-%m"
     )
 
@@ -386,7 +386,7 @@ async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool 
 
     fig.update_xaxes(
         tickangle=45,
-        nticks=len(update_times),
+        nticks=len(update_times)*2,
         tickformat="%d-%m"
     )
 
