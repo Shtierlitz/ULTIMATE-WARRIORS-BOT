@@ -46,7 +46,11 @@ async def get_player_gp_graphic(player_name, period):
                     current_month = record.update_time.month
 
     # Создаем график с использованием plotly
-    x_values = [player.update_time.replace(hour=0, minute=0, second=0, microsecond=0) for player in player_data]
+    x_values = [
+        player.update_time if i == len(player_data) - 1 else player.update_time.replace(hour=0, minute=0, second=0,
+                                                                                        microsecond=0)
+        for i, player in enumerate(player_data)
+    ]
     y_values = [player.galactic_power for player in player_data]
     # Сначала объединяем списки в список кортежей
     data = list(zip(x_values, y_values))
@@ -67,7 +71,7 @@ async def get_player_gp_graphic(player_name, period):
     ))
 
     fig.update_layout(
-        width=len(x_values)*100 if len(x_values) > 10 else 1200,
+        width=len(x_values) * 100 if len(x_values) > 10 else 1200,
         title=f'<b>{player_name}\'s</b> galactic power per <b>{period}</b>',
         xaxis_title='Update Time',
         yaxis_title='Galactic Power',
@@ -153,8 +157,9 @@ async def get_month_player_graphic(player_name: str) -> io.BytesIO or None:
     if not player_data:
         return
 
-    data = [(player.update_time.replace(hour=0, minute=0, second=0, microsecond=0), int(player.reid_points)) for player
-            in player_data]
+    data = [(player.update_time.replace(hour=0, minute=0, second=0, microsecond=0) if i != len(
+        player_data) - 1 else player.update_time, int(player.reid_points))
+            for i, player in enumerate(player_data)]
 
     data.sort(key=lambda x: x[0])
     update_times, reid_points = zip(*data)
@@ -225,8 +230,10 @@ async def get_guild_galactic_power(period: str) -> io.BytesIO:
                     current_month = record.last_db_update_time.month
 
     # Создаем график с использованием plotly
-    x_values = [guild.last_db_update_time.replace(hour=0, minute=0, second=0, microsecond=0) for guild in guild_data]
+    x_values = [guild.last_db_update_time.replace(hour=0, minute=0, second=0, microsecond=0) for guild in
+                guild_data]
     y_values = [guild.galactic_power for guild in guild_data]
+
     # Сначала объединяем списки в список кортежей
     data = list(zip(x_values, y_values))
 
@@ -289,7 +296,7 @@ async def get_guild_galactic_power(period: str) -> io.BytesIO:
 
     fig.update_xaxes(
         tickangle=45,
-        nticks=len(x_values),
+        tickvals=x_values,
         tickformat="%d-%m"
     )
 
@@ -315,11 +322,14 @@ async def get_player_rank_graphic(player_name: str, period: str, is_fleet: bool 
     if not player_data:
         return None
 
-    # Подготовка данных для построения графика
+        # Подготовка данных для построения графика
     if is_fleet:
-        rank_data = [(player.update_time.replace(hour=0, minute=0, second=0, microsecond=0), player.fleet_arena_rank) for player in player_data]
+        rank_data = [
+            (player.update_time.replace(hour=0, minute=0, second=0, microsecond=0), player.fleet_arena_rank) for
+            player in player_data]
     else:
-        rank_data = [(player.update_time.replace(hour=0, minute=0, second=0, microsecond=0), player.arena_rank) for player in player_data]
+        rank_data = [(player.update_time.replace(hour=0, minute=0, second=0, microsecond=0), player.arena_rank) for
+                     player in player_data]
 
     rank_data.sort(key=lambda x: x[0])  # Сортируем по дате
     update_times, ranks = zip(*rank_data)
