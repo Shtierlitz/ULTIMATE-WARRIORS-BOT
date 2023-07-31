@@ -55,8 +55,8 @@ async def gac_statistic() -> tuple:
                     result.append(f'{i.name} не зареган')
                     count_false += 1
 
-    result.append(f"Зареганных всего: {count_true}")
-    result.append(f"Завтыкали: {count_false}")
+    result.append(f"✅ Зареганных всего: {count_true}" if count_true == 50 else f"❗️ Зареганных всего: {count_true}")
+    result.append("✅ Завтыкавших нет" if count_false == 0 else f"🚷 Завтыкали: {count_false}")
     st_1, st_2, st_3, st_4, st_5 = split_list(result)
     return f'\n{"-" * 30}\n'.join(st_1), f'\n{"-" * 30}\n'.join(st_2), f'\n{"-" * 30}\n'.join(
         st_3), f'\n{"-" * 30}\n'.join(st_4), f'\n{"-" * 30}\n'.join(st_5)
@@ -111,7 +111,7 @@ async def get_players_list_from_ids(message: types.Message) -> Tuple[str, str]:
 
         return final_msg_1, final_msg_2
     else:
-        await bot.send_message(message.chat.id, "Файл ids.json не найден.")
+        await bot.send_message(message.chat.id, "❌ Файл ids.json не найден.")
 
 
 async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
@@ -126,7 +126,8 @@ async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
         with open(file_path, "r") as json_file:
             data = json.load(json_file)
         if len(data) >= 50:
-            await bot.send_message(message.chat.id, f"Превышено число членов гильдии. Добавление невозможно!")
+            await bot.send_message(message.chat.id, f"❌Превышено число членов гильдии. Добавление невозможно!\n"
+                                                    f"Команда отменена.")
         else:
             # Добавление нового игрока в список
             data.append({
@@ -141,9 +142,12 @@ async def add_player_to_ids(message: types.Message, new_data: dict) -> None:
             with open(file_path, "w") as json_file:
                 json.dump(data, json_file, ensure_ascii=False)
 
-            await bot.send_message(message.chat.id, f"Игрок {player_name} был добавлен в список.")
+            await bot.send_message(message.chat.id, f"✅ Игрок {player_name} был добавлен в список.\n\n"
+                                                    f"⚠️ После добавления проверьте полный список, "
+                                                    f"что все правильно добавилось\n"
+                                                    f"Если нет, то удалите и добавьте заново.")
     else:
-        await bot.send_message(message.chat.id, "Файл ids.json не найден.")
+        await bot.send_message(message.chat.id, "❌ Файл ids.json не найден.")
 
 
 async def delete_player_from_ids(message: types.Message, player_name):
@@ -164,13 +168,13 @@ async def delete_player_from_ids(message: types.Message, player_name):
         if player_found:
             break
     else:
-        await message.reply("Игрок с таким именем не найден.")
+        await message.reply("❌ Игрок с таким именем не найден.")
         return
 
     with open(file_path, 'w', encoding='utf-8') as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=2)
 
-    await bot.send_message(message.chat.id, f"Игрок {player_name} удален из списка.")
+    await bot.send_message(message.chat.id, f"✅ Игрок {player_name} удален из списка.")
 
 
 async def send_photo_message(tg_id: str or int, caption_text: str):
@@ -232,23 +236,23 @@ async def check_guild_players(message: types.Message):
             try:
                 if player_tg_id is None or player_tg_id == 'null' or len(player_tg_id) < 2:
                     await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                                           f"Игрок: {player_name}, не зарегистрировал свой ТГ ID")
+                                           f"⚠️ Игрок: {player_name}, не зарегистрировал свой ТГ ID")
                     await asyncio.sleep(3)
                 elif player_tg_nic is None or player_tg_nic == 'null' or len(player_tg_nic) < 2:
                     await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                                           f"У игрока: {player_name}, не создан или не добавлен ТГ ник")
+                                           f"⚠️ У игрока: {player_name}, не создан или не добавлен ТГ ник")
                     await asyncio.sleep(3)
                 else:
                     sent_message = await bot.send_message(player_tg_id,
-                                                          f"Проверка. Не обращай внимания. Проводится тестирование.")
+                                                          f"✅ Проверка. Не обращай внимания. Проводится тестирование.")
                     await bot.delete_message(sent_message.chat.id, sent_message.message_id)
                     await asyncio.sleep(3)
             except ChatNotFound:
                 await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                                       f"Игрок: {player_name} @{player_tg_nic}, не нажал СТАРТ или был введен неправильны ID")
+                                       f"❌ Игрок: {player_name} @{player_tg_nic}, не нажал СТАРТ или был введен неправильны ID")
                 await asyncio.sleep(3)
         await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                               f"Проверка завершена.")
+                               f"✅ Проверка завершена.")
 
     # except Exception as e:
     #     await message.reply(f"Ошибка: {e}.\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
@@ -289,11 +293,12 @@ async def delete_db_player_data(val):
                         select(Player).filter_by(ally_code=int(val)))
                     player_records = player_records.scalars().all()
                     if len(player_records) == 0:
-                        await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"Игрок с значением {val} отсутствует\n"
-                                                                           f"Проверьте правильность написания имени или кода союзника")
+                        await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
+                                               f"❌ Игрок с значением {val} отсутствует\n"
+                                               f"Проверьте правильность написания имени или кода союзника")
                         return
             except Exception as e:
-                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"Игрок с значением {val} отсутствует\n"
+                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), f"❌ Игрок с значением {val} отсутствует\n"
                                                                           f"Проверьте правильность написания имени или кода союзника")
                 return
     player_name: str = player_records[0].name
@@ -305,7 +310,6 @@ async def delete_db_player_data(val):
     return player_name
 
 
-
 async def send_points_message(player: Player, speach_list: list, rus: bool):
     try:
         await send_photo_message(player.tg_id,
@@ -314,7 +318,7 @@ async def send_points_message(player: Player, speach_list: list, rus: bool):
         await asyncio.sleep(30)
     except ChatNotFound as e:
         await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
-                               f"У {player.name} не подключена телега к чату.")
+                               f"❌ У {player.name} не подключена телега к чату.")
 
 
 async def get_player_by_name_or_nic(player_name: str) -> Player:

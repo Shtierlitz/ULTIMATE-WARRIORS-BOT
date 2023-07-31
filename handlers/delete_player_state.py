@@ -40,7 +40,7 @@ async def delete_player_name(message: types.Message, state: FSMContext):
                 delete_button = InlineKeyboardButton("Да", callback_data="delete")
                 keyboard.add(delete_button)
                 await message.answer(
-                    f"Вы уверены, что хотите удалить игрока {message.text}?",
+                    f"Вы уверены, что хотите удалить игрока {message.text}❔",
                     reply_markup=keyboard)  # Здесь добавляем вопрос пользователю
                 await DeletePlayer.DELETE_PLAYER.set()
             except Exception as e:
@@ -75,7 +75,7 @@ async def delete_player_process(call: types.CallbackQuery, state: FSMContext):
 async def cancel_add_player(call: types.CallbackQuery, state: FSMContext):
     """Завершает сиквенцию добавления персонажа"""
     await state.finish()
-    await call.message.answer("Удаление персонажа отменено.")
+    await call.message.answer("❌ Удаление персонажа отменено.")
 
 
 def register_handlers_delete_player(dp: Dispatcher):

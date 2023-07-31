@@ -22,7 +22,8 @@ async def start_group_command(call: types.CallbackQuery, state: FSMContext):
     if is_guild_member:
         if admin:
             keyboard = get_keyboard()
-            await call.message.answer("Введите никнеймы всех кому вы хотите отправить сообщение через пробел.",
+            await call.message.answer("Введите никнеймы в игре или имена игроков через @,"
+                                      " кому вы хотите отправить сообщение, через пробел.",
                                       reply_markup=keyboard)
             await Form.users.set()
         else:
@@ -30,8 +31,8 @@ async def start_group_command(call: types.CallbackQuery, state: FSMContext):
             await state.finish()
     else:
         await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
-            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
+            "\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
 async def process_users(message: types.Message, state: FSMContext):
@@ -83,9 +84,9 @@ async def process_message(message: types.Message, state: FSMContext):
                     failed_users = [i for i in data['users']]
                 if failed_users:
                     await message.answer(
-                        "Не удалось отправить сообщения следующим пользователям: " + "\n" + ",\n".join(failed_users))
+                        "❌ Не удалось отправить сообщения следующим пользователям: " + "\n" + ",\n".join(failed_users))
                 else:
-                    await message.answer("Сообщения были отправлены.")
+                    await message.answer("✅ Сообщения были отправлены.")
         else:
             await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
             await state.finish()

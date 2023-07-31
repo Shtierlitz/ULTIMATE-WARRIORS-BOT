@@ -67,7 +67,7 @@ async def player_info_buttons(message: types.Message, state: FSMContext):
 
         if not player:  # Если игрока с таким именем нет в базе данных
             await state.reset_state()
-            await message.answer('Игрок не найден. Выбор игрока отменён.', reply_markup=types.ReplyKeyboardRemove())
+            await message.answer('❌ Игрок не найден. Выбор игрока отменён.', reply_markup=types.ReplyKeyboardRemove())
         else:
             kb = await create_player_info_keyboard(player_name)  # Создать клавиатуру
             await message.reply(f"Выберете информацию об игроке {player_name}.", reply_markup=kb)
@@ -116,7 +116,7 @@ async def player_data_info(message: types.Message, state: FSMContext):
 
     # Если ввод не является командой и не соответствует атрибутам игрока
     await state.reset_state()
-    return await message.answer('Неизвестная команда. Выбор данных игрока отменён.',
+    return await message.answer('❌ Неизвестная команда. Выбор данных игрока отменён.',
                                 reply_markup=types.ReplyKeyboardRemove())
 
 
@@ -131,7 +131,7 @@ async def default_state_handler(message: types.Message, state: FSMContext):
 
         if message.text not in valid_commands:
             await state.reset_state()
-            await message.reply("Ввод не распознан. Выбор данных игрока отменён.",
+            await message.reply("❌ Ввод не распознан. Выбор данных игрока отменён.",
                                 reply_markup=types.ReplyKeyboardRemove())
 
 

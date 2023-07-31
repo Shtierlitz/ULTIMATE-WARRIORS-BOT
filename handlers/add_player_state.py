@@ -29,7 +29,8 @@ async def start_add_player(call: types.CallbackQuery, state: FSMContext):
     if is_guild_member:
         if admin:
             keyboard = get_keyboard()
-            await call.message.answer("Начинаем секвенцию добавления персонажа в ids.json\nВведите код союзника.",
+            await call.message.answer("Начинаем секвенцию добавления персонажа в ids.json\n"
+                                      "Введите код союзника без черточек.",
                                       reply_markup=keyboard)
             await AddPlayer.ally_code.set()
         else:
@@ -61,7 +62,7 @@ async def process_player_name(message: types.Message, state: FSMContext):
             async with state.proxy() as data:
                 keyboard = get_keyboard()
                 data['player_name'] = message.text
-                await message.answer("Теперь введите имя телеграм ник.",
+                await message.answer("Теперь введите имя телеграм ник. (Без @)",
                                      reply_markup=keyboard)
             await AddPlayer.next()
         else:
@@ -77,7 +78,7 @@ async def process_tg_nic(message: types.Message, state: FSMContext):
             async with state.proxy() as data:
                 keyboard = get_keyboard()
                 data['tg_nic'] = message.text
-                await message.answer("Теперь введите ТГ ID.",
+                await message.answer("Теперь введите ТГ ID.\nТот длинный код из бота - @getmyid_bot",
                                      reply_markup=keyboard)
             await AddPlayer.next()
         else:

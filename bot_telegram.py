@@ -2,10 +2,13 @@
 
 import os
 
+from telegram.error import NetworkError
+
 import apsched
 from aiogram.utils import executor
-from handlers import member, admin, player_data, send_group_message, developer, send_message_everyone, add_player_state, \
-    reid_points_state, delete_player_state, delete_player_db_state
+from handlers import member, admin, player_data_state, send_group_message, developer, send_message_everyone, \
+    add_player_state, \
+    reid_points, delete_player_state, delete_player_db_state
 from create_bot import dp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
@@ -31,8 +34,8 @@ async def on_startup(_):  # функция настроек старта бот�
 
 
 member.register_handlers_member(dp)  # регистрация хендлеров
-player_data.register_handlers_player(dp)
-reid_points_state.register_handlers_reid(dp)
+player_data_state.register_handlers_player(dp)
+reid_points.register_handlers_reid(dp)
 add_player_state.register_handlers_add_player(dp)
 delete_player_state.register_handlers_delete_player(dp)
 delete_player_db_state.register_handlers_delete_db_player(dp)
@@ -45,10 +48,8 @@ developer.register_handlers_developer(dp)
 if __name__ == '__main__':
     # while True:
     #     try:
-
     executor.start_polling(dp, skip_updates=True,
                            on_startup=on_startup)  # нужно чтоб не завалило спамом когда он не активный
-
-    # except NetworkError as e:
-    #     print(f"Произошла ошибка сервера: {e}")
-    #     continue
+        # except NetworkError as e:
+        #     print(f"Произошла ошибка сервера: {e}")
+        #     continue
