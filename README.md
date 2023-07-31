@@ -1,17 +1,27 @@
-# ULTIMATE-WARRIORS-BOT
-Telegram bot for the guild ULTIMATE WARIORS 
+# SWGOH-COMLINK-GUILD-CONTROL-BOT-SYSTEM ru
 
-docker network create swgoh
+# Описание
+Бот разработан как полноценная система управления и контроля гильдией по мотивам игры SWGOH.  
 
-docker run --name swgoh-comlink --network swgoh -d --restart always --env APP_NAME=shtierlitz_comlinc -p 3200:3000 ghcr.io/swgoh-utils/swgoh-comlink:latest
+Выполнено по заказу [SashaBeckmann &#8599;](https://t.me/SashaBeckmann)  
 
-docker build -t swgoh-stats .
+Система одновременно парист 2 API по игре [comlinc](https://github.com/swgoh-utils/swgoh-comlink) и [swgoh.gg](http://api.swgoh.gg/),
+сохраняет данные в базу данных и предоставляет удобный интерфейс управления.
+## Ключевые технологии
+`pyhon`, `aiogram`. `posgres`, `alembic`, `asyncpg`, `SqlAlchemy AsyncSession`. `aiohttp`, `plotly`, `APScheduler`
 
-docker run --name=swgoh-stats --network swgoh -d --restart always --env-file .env swgoh-stats -p 3223:3223 -v $(pwd)/statCalcData:/app/statCalcData ghcr.io/swgoh-utils/swgoh-stats:latest
+### Внимание!
+Бот использует только открытые данные об игре и не имеет ничего общего со взломом или реверсивной инженерией с перехватами пакетов!
 
-docker run --rm -it -p 3223:3223 --env-file .env swgoh-stats  
+## Возможности бота:
+<img src="readme_docs/media/members_use.jpg" width="220" height="200"> <img src="readme_docs/media/admin_use.jpg" width="220" height="200">
+
+Детально с инструкцией по эксплуатации можно ознакомиться [тут...](readme_docs/expluatation.md)
+
+Инструкция по установке и размещению на сервере [тут.](readme_docs/installation.md)  
+
+Использование бота открыто для скачивания, однако, установка подразумевает наличие .env файла и специфических настроек,
+которые вы можете получить от меня вместе с дальнейшим сопровождением и обновлениями подписавшись на мой [patreon &#8599;](https://patreon.com/Shtierlitz) за скромный донат. 
 
 
-alembic revision --m="initial check" --autogenerate               генерация миграций
-alembic upgrade head                 применение миграций
 
