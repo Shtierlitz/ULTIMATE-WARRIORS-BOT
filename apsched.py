@@ -84,7 +84,7 @@ async def update_db(*args, **kwargs):
 async def final_points_per_month():
     # Check if today is the last day of the month
     tomorrow = datetime.now() + timedelta(days=1)
-    logging.info("функция шедулера по отправки месячного сообщения выполнилась", tomorrow.day)
+    logging.info(f"функция шедулера по отправки месячного сообщения выполнилась {tomorrow.day}")
     if tomorrow.day == 1:
         try:
             message = await PlayerScoreService.get_raid_scores_all()
@@ -97,7 +97,7 @@ async def final_points_per_month():
 async def final_gp_per_month():
     # Check if today is the last day of the month
     tomorrow = datetime.now() + timedelta(days=1)
-    logging.info("функция шедулера по отправки месячного сообщения выполнилась", tomorrow.day)
+    logging.info(f"функция шедулера по отправки месячного сообщения выполнилась {tomorrow.day}")
     if tomorrow.day == 1:
         try:
             message = await PlayerPowerService.get_galactic_power_all()
