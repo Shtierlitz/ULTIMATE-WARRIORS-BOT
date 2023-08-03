@@ -3,114 +3,79 @@
 from aiogram import types, Dispatcher
 from aiogram.types import CallbackQuery
 
+from src.decorators import member_check_call
 from src.player import PlayerScoreService
 
 
+@member_check_call
 async def start_cmd_handler(call: types.CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        keyboard = types.InlineKeyboardMarkup()
-        keyboard.add(types.InlineKeyboardButton("✴️ Энка за сегодня", callback_data='raid_points'))
-        keyboard.add(types.InlineKeyboardButton("⌛️ Энка за месяц", callback_data='raid_points_all'))
-        keyboard.add(types.InlineKeyboardButton("💪🏻 Топ 10 за неделю", callback_data='raid_top_week'))
-        keyboard.add(types.InlineKeyboardButton("🦾 Чемпионы месяца", callback_data='raid_top_month'))
-        keyboard.add(types.InlineKeyboardButton("🪫 Лентяи сегодня", callback_data='raid_lazy'))
-        keyboard.add(types.InlineKeyboardButton("🔪 Лентяи вчера 🔪", callback_data='raid_yesterday'))
-        keyboard.add(types.InlineKeyboardButton("⚰️ Дно недели ⚰️", callback_data='raid_lazy_week'))
-        keyboard.add(types.InlineKeyboardButton("☠️ Кандидаты на вылет за месяц ☠️", callback_data='raid_lazy_month'))
-        await call.message.answer("🔋Энка сервис🔋", reply_markup=keyboard)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("✴️ Энка за сегодня", callback_data='raid_points'))
+    keyboard.add(types.InlineKeyboardButton("⌛️ Энка за месяц", callback_data='raid_points_all'))
+    keyboard.add(types.InlineKeyboardButton("💪🏻 Топ 10 за неделю", callback_data='raid_top_week'))
+    keyboard.add(types.InlineKeyboardButton("🦾 Чемпионы месяца", callback_data='raid_top_month'))
+    keyboard.add(types.InlineKeyboardButton("🪫 Лентяи сегодня", callback_data='raid_lazy'))
+    keyboard.add(types.InlineKeyboardButton("🔪 Лентяи вчера 🔪", callback_data='raid_yesterday'))
+    keyboard.add(types.InlineKeyboardButton("⚰️ Дно недели ⚰️", callback_data='raid_lazy_week'))
+    keyboard.add(types.InlineKeyboardButton("☠️ Кандидаты на вылет за месяц ☠️", callback_data='raid_lazy_month'))
+    await call.message.answer("🔋Энка сервис🔋", reply_markup=keyboard)
 
 
+
+@member_check_call
 async def raid_points_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_raid_scores()
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Показывает энку за сегодняшний день"""
+    message_strings = await PlayerScoreService.get_raid_scores()
+    await call.message.answer(message_strings)
 
 
+@member_check_call
 async def raid_points_all_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_raid_scores_all()
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Показывает энку за месяц"""
+    message_strings = await PlayerScoreService.get_raid_scores_all()
+    await call.message.answer(message_strings)
 
 
+@member_check_call
 async def raid_lazy_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_reid_lazy_fools()
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Показывает кто за сегодня не досдал энку"""
+    message_strings = await PlayerScoreService.get_reid_lazy_fools()
+    await call.message.answer(message_strings)
 
 
+@member_check_call
 async def raid_lazy_yesterday_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_reid_lazy_fools('yesterday')
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Показывает кто недосдал за вчера"""
+    message_strings = await PlayerScoreService.get_reid_lazy_fools('yesterday')
+    await call.message.answer(message_strings)
 
 
+@member_check_call
 async def raid_lazy_week_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_least_reid_lazy_fools('week')
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Показывает кто всех лентяев недели"""
+    message_strings = await PlayerScoreService.get_least_reid_lazy_fools('week')
+    await call.message.answer(message_strings)
 
 
+@member_check_call
 async def raid_lazy_month_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_least_reid_lazy_fools('month')
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Показывает всех лентяев месяца"""
+    message_strings = await PlayerScoreService.get_least_reid_lazy_fools('month')
+    await call.message.answer(message_strings)
 
 
+@member_check_call
 async def raid_top_week_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_least_reid_lazy_fools('week', least=False)
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Показывает чемпионов недели по энке"""
+    message_strings = await PlayerScoreService.get_least_reid_lazy_fools('week', least=False)
+    await call.message.answer(message_strings)
 
 
+@member_check_call
 async def raid_top_month_handler(call: CallbackQuery):
-    is_guild_member = call.message.conf.get('is_guild_member', False)
-    if is_guild_member:
-        message_strings = await PlayerScoreService.get_least_reid_lazy_fools('month', least=False)
-        await call.message.answer(message_strings)
-    else:
-        await call.message.answer(
-            "❌ Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\n👉🏻 Для вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Чемпионы месяца по энке"""
+    message_strings = await PlayerScoreService.get_least_reid_lazy_fools('month', least=False)
+    await call.message.answer(message_strings)
 
 
 def register_handlers_reid(dp: Dispatcher):

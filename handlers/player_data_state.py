@@ -26,7 +26,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     if is_guild_member:
         if message.text == 'Отмена❌':
             await state.reset_state()
-            await message.answer('Отменено', reply_markup=types.ReplyKeyboardRemove())
+            await message.answer('❌ Действие отменено', reply_markup=types.ReplyKeyboardRemove())
 
 
 async def player_buttons(call: Union[types.CallbackQuery, types.Message], state: Optional[FSMContext] = None):

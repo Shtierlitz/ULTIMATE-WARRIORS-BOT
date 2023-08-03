@@ -6,28 +6,22 @@ from create_bot import bot
 import io
 import os
 
+from src.decorators import member_admin_check, member_super_admin_check
 from src.graphics import get_guild_galactic_power
 from src.guild import GuildData
 from src.player import PlayerData
 from src.utils import get_players_list_from_ids, \
-    check_guild_players, is_admin, is_member_admin_super
+    check_guild_players, is_admin
 
 
+@member_super_admin_check
 async def player_cmd_handler(call: types.CallbackQuery):
-    is_guild_member, admin, super_admin = await is_member_admin_super(call, super_a=True)
-    if is_guild_member:
-        if admin and super_admin:
-            keyboard = types.InlineKeyboardMarkup()
-            keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Добавить игрока в бот", callback_data='add_player'))
-            keyboard.add(types.InlineKeyboardButton("🗓 Список всех", callback_data='players_list'))
-            keyboard.add(types.InlineKeyboardButton("🔪 Удалить игрока из бота", callback_data='delete_player'))
-            await call.message.answer("👮🏻‍♂️ Служба по игрокам", reply_markup=keyboard)
-        else:
-            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-    else:
-        await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
-            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Меню добавления/удаления игрока в бот"""
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("🙋🏻‍♂️ Добавить игрока в бот", callback_data='add_player'))
+    keyboard.add(types.InlineKeyboardButton("🗓 Список всех", callback_data='players_list'))
+    keyboard.add(types.InlineKeyboardButton("🔪 Удалить игрока из бота", callback_data='delete_player'))
+    await call.message.answer("👮🏻‍♂️ Служба по игрокам", reply_markup=keyboard)
 
 
 async def admin_command_help(update: [types.Message, types.CallbackQuery]):
@@ -65,99 +59,41 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
 
+@member_admin_check
 async def command_db_extra(call: types.CallbackQuery):
     """Стартуем бот и обновляем БД"""
-    is_guild_member, admin = await is_member_admin_super(call)
-    if is_guild_member:
-        if admin:
-            try:
-                await bot.send_message(call.message.chat.id,
-                                       "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
-                await GuildData().build_db()
-                await PlayerData().update_players_data()
-            except Exception as e:
-                await call.message.reply(
-                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-        else:
-            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-    else:
-        await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
-            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    await bot.send_message(call.message.chat.id,
+                           "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
+    await GuildData().build_db()
+    await PlayerData().update_players_data()
 
 
+@member_admin_check
 async def players_list(call: types.CallbackQuery):
     """Отправляет содержимое файла ids.json в чат"""
-    is_guild_member, admin = await is_member_admin_super(call)
-    if is_guild_member:
-        if admin:
-            try:
-                final_msg_1, final_msg_2 = await get_players_list_from_ids(call.message)
-                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), final_msg_1)
-                await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), final_msg_2)
-
-            except Exception as e:
-                await call.message.reply(
-                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-        else:
-            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-    else:
-        await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
-            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    final_msg_1, final_msg_2 = await get_players_list_from_ids(call.message)
+    await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), final_msg_1)
+    await bot.send_message(os.environ.get('OFFICER_CHAT_ID'), final_msg_2)
 
 
+@member_admin_check
 async def send_month_guild_grafic(call: types.CallbackQuery):
     """Отправляет график мощи гильдии"""
-    is_guild_member, admin = await is_member_admin_super(call)
-    if is_guild_member:
-        if admin:
-            try:
-                image: io.BytesIO = await get_guild_galactic_power(period="month")
-                await bot.send_photo(chat_id=call.message.chat.id, photo=image)
-            except Exception as e:
-                await call.message.reply(
-                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-    else:
-        await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
-            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    image: io.BytesIO = await get_guild_galactic_power(period="month")
+    await bot.send_photo(chat_id=call.message.chat.id, photo=image)
 
 
+@member_admin_check
 async def send_year_guild_graphic(call: types.CallbackQuery):
     """Отправляет график рейда игрока"""
-    is_guild_member, admin = await is_member_admin_super(call)
-    if is_guild_member:
-        if admin:
-            try:
-                image: io.BytesIO = await get_guild_galactic_power(period="year")
-                await bot.send_photo(chat_id=call.message.chat.id, photo=image)
-            except Exception as e:
-                await call.message.reply(
-                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-        else:
-            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-    else:
-        await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
-            "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    image: io.BytesIO = await get_guild_galactic_power(period="year")
+    await bot.send_photo(chat_id=call.message.chat.id, photo=image)
 
 
+@member_admin_check
 async def check_ids(call: types.CallbackQuery):
-    is_guild_member, admin = await is_member_admin_super(call)
-    if is_guild_member:
-        if admin:
-            try:
-                await check_guild_players(call.message)
-            except Exception as e:
-                await call.message.reply(
-                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
-        else:
-            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-    else:
-        await call.message.answer(
-            "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. "
-            "Комманда запрещена.\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
+    """Делает проверку всех внесенных в ids.json на доступность"""
+    await check_guild_players(call.message)
 
 
 def register_handlers_admin(dp: Dispatcher):

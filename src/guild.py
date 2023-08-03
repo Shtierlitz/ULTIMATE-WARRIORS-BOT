@@ -115,13 +115,13 @@ class GuildData:
         datetime_object = guild_data_today.guild_reset_time
         time_string = datetime_object.strftime("%H:%M")
         return [
-            f"Name: {guild_data_today.name}",
-            f"Guild ID: {guild_data_today.guild_id}",
-            f"Credo: {guild_data_today.credo}",
-            f"Galactic Power: {guild_data_today.galactic_power}",
-            f"Required Level: {guild_data_today.required_level}",
-            f"Total Members: {guild_data_today.total_members}",
-            f"Guild Reset Time: {time_string}",
-            f"Time zone: {os.environ.get('TIME_ZONE')}",
-            f"Last DB Update Time: {guild_data_today.last_db_update_time}"
+            f"Название: {guild_data_today.name}",
+            f"Идентификатор на swgoh.gg: {guild_data_today.guild_id}",
+            f"Лозунг: {guild_data_today.credo}",
+            f"ГМ: {guild_data_today.galactic_power}",
+            f"Минимальный уровень вступления: {guild_data_today.required_level}",
+            f"Всего игроков: {guild_data_today.total_members}",
+            f"Время обновления дня: {time_string}",
+            f"Часовой пояс: {os.environ.get('TIME_ZONE')}",
+            f"Последнее обновление в боте: {guild_data_today.last_db_update_time}"
         ]

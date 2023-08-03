@@ -19,7 +19,6 @@ from src.errors import AddIdsError
 from src.utils import get_new_day_start, format_scores, get_localized_datetime, get_end_date
 from sqlalchemy import select, delete, func
 
-
 HOURS, MINUTES = int(os.environ.get('DAY_UPDATE_HOUR', 16)), int(os.environ.get('DAY_UPDATE_MINUTES', 30))
 
 API_LINK = f"{os.environ.get('API_HOST')}:{os.environ.get('API_PORT')}"
@@ -354,7 +353,10 @@ class PlayerScoreService:
         # форматирование времени в минуты
         local_time_str = local_time.strftime('%H:%M')
 
-        scores.insert(0, f"\nСписок не сдавших 600 энки на {local_time_str} по {os.environ.get('TZ_SUFFIX')}\n")
+        scores.insert(
+            0,
+            f"\nСписок не сдавших 600 энки за вчера.\n" if period == "yesterday" else
+            f"\nСписок не сдавших 600 энки на {local_time_str} по {os.environ.get('TZ_SUFFIX')}\n")
         return f"\n{'-' * 30}\n".join(scores)
 
     @staticmethod

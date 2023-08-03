@@ -2,7 +2,7 @@
 
 import os
 
-from telegram.error import NetworkError
+# from telegram.error import NetworkError
 
 import apsched
 from aiogram.utils import executor

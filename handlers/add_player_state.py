@@ -5,7 +5,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from src.utils import add_player_to_ids, is_member_admin_super
+from src.decorators import member_admin_state_call_check, member_admin_state_message_check
+from src.utils import add_player_to_ids
 
 
 class AddPlayer(StatesGroup):
@@ -23,89 +24,64 @@ def get_keyboard():
     return keyboard
 
 
-async def start_add_player(call: types.CallbackQuery, state: FSMContext):
+@member_admin_state_call_check
+async def start_add_player(call: types.CallbackQuery, state: FSMContext):   # state не удалять
     """Начинает секвенцию"""
-    is_guild_member, admin = await is_member_admin_super(call)
-    if is_guild_member:
-        if admin:
-            keyboard = get_keyboard()
-            await call.message.answer("Начинаем секвенцию добавления персонажа в ids.json\n"
-                                      "Введите код союзника без черточек.",
-                                      reply_markup=keyboard)
-            await AddPlayer.ally_code.set()
-        else:
-            await call.message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-            await state.finish()
+    keyboard = get_keyboard()
+    await call.message.answer("Начинаем секвенцию добавления персонажа в ids.json\n"
+                              "Введите код союзника без черточек.",
+                              reply_markup=keyboard)
+    await AddPlayer.ally_code.set()
 
 
+@member_admin_state_message_check
 async def process_ally_code(message: types.Message, state: FSMContext):
     """Добавляет код союзника и просит ввести имя игрока"""
-    is_guild_member, admin = await is_member_admin_super(message=message)
-    if is_guild_member:
-        if admin:
-            async with state.proxy() as data:
-                keyboard = get_keyboard()
-                data['ally_code'] = message.text
-                await message.answer("Теперь введите имя игрока в игре.",
-                                     reply_markup=keyboard)
-            await AddPlayer.next()
-        else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-            await state.finish()
+    async with state.proxy() as data:
+        keyboard = get_keyboard()
+        data['ally_code'] = message.text
+        await message.answer("Теперь введите имя игрока в игре.",
+                             reply_markup=keyboard)
+    await AddPlayer.next()
 
 
+@member_admin_state_message_check
 async def process_player_name(message: types.Message, state: FSMContext):
     """Добавляет имя игрока и просит ввести ник телеги"""
-    is_guild_member, admin = await is_member_admin_super(message=message)
-    if is_guild_member:
-        if admin:
-            async with state.proxy() as data:
-                keyboard = get_keyboard()
-                data['player_name'] = message.text
-                await message.answer("Теперь введите имя телеграм ник. (Без @)",
-                                     reply_markup=keyboard)
-            await AddPlayer.next()
-        else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-            await state.finish()
+    async with state.proxy() as data:
+        keyboard = get_keyboard()
+        data['player_name'] = message.text
+        await message.answer("Теперь введите имя телеграм ник. (Без @)",
+                             reply_markup=keyboard)
+    await AddPlayer.next()
 
 
+@member_admin_state_message_check
 async def process_tg_nic(message: types.Message, state: FSMContext):
     """Вводит телеграм ник и просит ввести тг ID"""
-    is_guild_member, admin = await is_member_admin_super(message=message)
-    if is_guild_member:
-        if admin:
-            async with state.proxy() as data:
-                keyboard = get_keyboard()
-                data['tg_nic'] = message.text
-                await message.answer("Теперь введите ТГ ID.\nТот длинный код из бота - @getmyid_bot",
-                                     reply_markup=keyboard)
-            await AddPlayer.next()
-        else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-            await state.finish()
+    async with state.proxy() as data:
+        keyboard = get_keyboard()
+        data['tg_nic'] = message.text
+        await message.answer("Теперь введите ТГ ID.\nТот длинный код из бота - @getmyid_bot",
+                             reply_markup=keyboard)
+    await AddPlayer.next()
 
 
+@member_admin_state_message_check
 async def process_tg_id(message: types.Message, state: FSMContext):
-    is_guild_member, admin = await is_member_admin_super(message=message)
-    if is_guild_member:
-        if admin:
-            async with state.proxy() as data:
-                data['tg_id'] = message.text
-            data = await state.get_data()
+    async with state.proxy() as data:
+        data['tg_id'] = message.text
+    data = await state.get_data()
 
-            await add_player_to_ids(message, data)
+    await add_player_to_ids(message, data)
 
-            await state.finish()
-        else:
-            await message.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
-            await state.finish()
+    await state.finish()
 
 
 async def cancel_state(call: types.CallbackQuery, state: FSMContext):
     """Завершает секвенцию"""
     await state.finish()
-    await call.message.answer("Добавление персонажа отменено.")
+    await call.message.answer("❌ Действие отменено.")
 
 
 def register_handlers_add_player(dp: Dispatcher):
