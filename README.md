@@ -8,7 +8,7 @@
 Система одновременно парист 2 API по игре [comlink](https://github.com/swgoh-utils/swgoh-comlink) и [swgoh.gg](http://api.swgoh.gg/),
 сохраняет данные в базу данных и предоставляет удобный интерфейс управления.
 ## Ключевые технологии
-`python`, `aiogram`. `posgreSQL`, `alembic`, `asyncpg`, `SqlAlchemy AsyncSession`. `aiohttp`, `plotly`, `APScheduler`
+`python`, `aiogram`. `posgreSQL`, `alembic`, `asyncpg`, `SqlAlchemy AsyncSession`, `aiohttp`, `plotly`, `APScheduler`
 
 ### Внимание!
 Бот использует только открытые данные об игре и не имеет ничего общего со взломом или реверсивной инженерией с перехватами пакетов!
