@@ -1,4 +1,4 @@
-![img.png](/media/choice.jpg)
+![img.png](media/choice.jpg)
 
 И так у тебя есть 2 опции.  
 Ты можешь подписаться на мой [patreon &#8599;](https://patreon.com/Shtierlitz) и получить полное руководство по системным
