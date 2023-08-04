@@ -3,6 +3,7 @@ import asyncio
 import json
 import os
 import random
+import re
 from typing import Tuple, List
 
 import aiohttp
@@ -409,3 +410,8 @@ async def is_member_admin_super(call: types.CallbackQuery = None, super_a: bool 
     if super_a:
         return is_guild_member, admin, super_admin
     return is_guild_member, admin
+
+
+def is_valid_name(name):
+    # Регулярное выражение, которое проверяет, состоит ли строка только из букв и цифр
+    return bool(re.match('^[a-zA-Z0-9_]*$', name))

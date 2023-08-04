@@ -6,7 +6,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton
 
 from handlers.add_player_state import get_keyboard
-from src.decorators import member_admin_super_state_call_check
+from src.decorators import member_admin_super_state_call_check, member_admin_super_state_message_check
 from src.utils import delete_player_from_ids
 
 
@@ -24,7 +24,7 @@ async def start_delete_player(call: types.CallbackQuery, state: FSMContext):  # 
     await DeletePlayer.GET_NAME.set()
 
 
-@member_admin_super_state_call_check
+@member_admin_super_state_message_check
 async def delete_player_name(message: types.Message, state: FSMContext):
     # Сохраняем имя игрока в контексте состояния
     await state.update_data(player_name=message.text)
@@ -43,7 +43,10 @@ async def delete_player_process(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     player_name = data.get("player_name")
     # Удаление игрока
-    await delete_player_from_ids(call.message, player_name)
+    action = await delete_player_from_ids(call.message, player_name)
+    if not action:
+        await call.message.answer("❌ Удаление персонажа отменено.")
+        await state.finish()
 
 
 async def cancel_add_player(call: types.CallbackQuery, state: FSMContext):
