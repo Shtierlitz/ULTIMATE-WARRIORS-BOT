@@ -414,4 +414,4 @@ async def is_member_admin_super(call: types.CallbackQuery = None, super_a: bool 
 
 def is_valid_name(name):
     # Регулярное выражение, которое проверяет, состоит ли строка только из букв и цифр
-    return bool(re.match('^[a-zA-Z0-9_]*$', name))
+    return bool(re.match('^[a-zA-Z0-9_-]*$', name))

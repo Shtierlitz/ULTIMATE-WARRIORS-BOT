@@ -457,7 +457,7 @@ class PlayerPowerService:
         if now.time() < time(HOURS, MINUTES):
             now -= timedelta(days=1)
         powers.append(
-            f"Общая разница в галактической мощи\nот {(start_month_players[0].update_time - timedelta(days=1)).strftime('%d.%m.%y')} до {datetime.now().strftime('%d.%m.%y')}:    {total_diff}")
+            f"Общая разница в галактической мощи\nот {(start_month_players[0].update_time).strftime('%d.%m.%y')} до {datetime.now().strftime('%d.%m.%y')}:    {total_diff}")
 
         today = datetime.today().date()
         if today == end_date.date():

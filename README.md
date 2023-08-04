@@ -5,7 +5,7 @@
 
 Выполнено по заказу [SashaBeckmann &#8599;](https://t.me/SashaBeckmann)  
 
-Система одновременно парист 2 API по игре [comlinc](https://github.com/swgoh-utils/swgoh-comlink) и [swgoh.gg](http://api.swgoh.gg/),
+Система одновременно парист 2 API по игре [comlink](https://github.com/swgoh-utils/swgoh-comlink) и [swgoh.gg](http://api.swgoh.gg/),
 сохраняет данные в базу данных и предоставляет удобный интерфейс управления.
 ## Ключевые технологии
 `pyhon`, `aiogram`. `posgres`, `alembic`, `asyncpg`, `SqlAlchemy AsyncSession`. `aiohttp`, `plotly`, `APScheduler`
@@ -21,7 +21,7 @@
 Инструкция по установке и размещению на сервере [тут.](readme_docs/installation.md)  
 
 Использование бота открыто для скачивания, однако, установка подразумевает наличие .env файла и специфических настроек,
-которые вы можете получить от меня вместе с дальнейшим сопровождением и обновлениями подписавшись на мой [patreon &#8599;](https://patreon.com/Shtierlitz) за скромный донат. 
+которые вы можете получить от меня [тут](readme_docs/env.md) вместе с дальнейшим сопровождением и обновлениями подписавшись на мой [patreon &#8599;](https://patreon.com/Shtierlitz) за скромный донат. 
 
 
 

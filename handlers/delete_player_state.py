@@ -1,4 +1,5 @@
 # handlers/delete_player_state.py
+import os
 
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
@@ -19,7 +20,7 @@ class DeletePlayer(StatesGroup):
 async def start_delete_player(call: types.CallbackQuery, state: FSMContext):  # state не удалять!
     """Начинает сиквенцию"""
     keyboard = get_keyboard()
-    await call.message.answer("Начинаем сиквенцию удаления персонажа из ids.json\nВведите имя персонажа в игре.",
+    await call.message.answer(f"Начинаем сиквенцию удаления персонажа из {os.environ.get('IDS_JSON')}\nВведите имя персонажа в игре.",
                               reply_markup=keyboard)
     await DeletePlayer.GET_NAME.set()
 

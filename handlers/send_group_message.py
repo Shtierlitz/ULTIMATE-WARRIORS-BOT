@@ -30,7 +30,6 @@ async def start_group_command(call: types.CallbackQuery, state: FSMContext):    
 @member_admin_state_message_check
 async def process_users(message: types.Message, state: FSMContext):
     """Этап ввода имен игроков"""
-    print(message)
     keyboard = get_keyboard()
     async with state.proxy() as data:
         # Заменяем символ "@" на пустую строку перед разделением имен пользователей
@@ -40,9 +39,9 @@ async def process_users(message: types.Message, state: FSMContext):
 
         invalid_names = [name for name in user_names if not is_valid_name(name)]
         if invalid_names:
-            await message.answer("Нельзя вводить не буквы или цифры: " + ', '.join(invalid_names))
-            await state.finish()
-            await message.answer("❌ Действие отменено")
+            await message.answer("Нельзя вводить не буквы или не цифры: " + ', '.join(invalid_names))
+            # await state.finish()
+            # await message.answer("❌ Действие отменено")
         else:
             data['users'] = user_names
             await message.answer("Введите сообщение, которое хотите отправить.", reply_markup=keyboard)
@@ -51,7 +50,6 @@ async def process_users(message: types.Message, state: FSMContext):
 
 @member_admin_state_message_check
 async def process_message(message: types.Message, state: FSMContext):
-    print(message)
     async with state.proxy() as data:
         data['message'] = message.text  # Сохраняем текст сообщения
 
