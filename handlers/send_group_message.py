@@ -39,7 +39,7 @@ async def process_users(message: types.Message, state: FSMContext):
 
         invalid_names = [name for name in user_names if not is_valid_name(name)]
         if invalid_names:
-            await message.answer("Нельзя вводить не буквы или не цифры: " + ', '.join(invalid_names))
+            await message.answer("Доступны только латинские буквы, цифры и @: " + ', '.join(invalid_names))
             # await state.finish()
             # await message.answer("❌ Действие отменено")
         else:
@@ -68,6 +68,7 @@ async def process_message(message: types.Message, state: FSMContext):
         failed_users = []  # Список пользователей, которым не удалось отправить сообщение
 
         if users_from_db:
+            print(users_from_db)
             # Отправляем сообщение каждому пользователю
             for user_nic, user_id in users_from_db.items():
                 # print(user)
@@ -76,13 +77,14 @@ async def process_message(message: types.Message, state: FSMContext):
                 except Exception as e:
                     failed_users.append(user_nic + " " + str(e))  # Добавляем пользователя в список неудач
                     print(f"Не удалось отправить сообщение пользователю {user_nic}: {e}")
-        else:
+        else:   # Это нужно на случай если введут имя неправильное
             failed_users = [i for i in data['users']]
         if failed_users:
             await message.answer(
                 "❌ Не удалось отправить сообщения следующим пользователям: " + "\n" + ",\n".join(failed_users))
         else:
             await message.answer("✅ Сообщения были отправлены.")
+        await state.finish()
 
 
 def register_handlers_group_message(dp: Dispatcher):

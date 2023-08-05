@@ -53,12 +53,12 @@ async def process_all_message(message: types.Message, state: FSMContext):
                 except Exception as e:
                     failed_users.append(user_nic)  # Add the user to the list of failures
                     logging.info(f"Failed to send message to user {user_nic}: {e}")
-            await state.finish()
         if failed_users:
             await message.answer(
                 "Не удалось отправить сообщения следующим пользователям: " + ", https://t.me/".join(failed_users))
         else:
             await message.answer("Сообщения были успешно отправлены всем.")
+        await state.finish()
 
 
 def register_handlers_message_all(dp: Dispatcher):
