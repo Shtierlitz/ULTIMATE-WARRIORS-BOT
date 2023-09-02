@@ -1,4 +1,5 @@
 # apsched.py
+import asyncio
 import logging
 import os
 
@@ -62,16 +63,19 @@ async def check_guild_points(*args, **kwargs):
                         await send_points_message(player, message_list_eng, rus=False)
                     else:
                         await send_points_message(player, message_list_ru, rus=True)
+                    await asyncio.sleep(10)
                 else:
                     await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                            f"У {player.name} нету идентификатора в боте.")
             except Exception as e:
+                print(player.name, e)
                 await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                        f"Произошла ошибка при отправке автосообщения про энку: \n\n{e}\n\nПроизошло это на пользователе: {player.name}\nВероятнее всего не з\дал свой тг id или не нажал /start у бота")
         # Отправляем офицерам напоминалку кто не сдал еще энку
         message_strings = await PlayerScoreService.get_reid_lazy_fools()
         await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message_strings)
     except Exception as e:
+        print(e)
         await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                f"Произошла ошибка при отправке автосообщения про энку: \n\n{e}\n.")
 
