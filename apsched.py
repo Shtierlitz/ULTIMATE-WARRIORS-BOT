@@ -63,7 +63,7 @@ async def check_guild_points(*args, **kwargs):
                         await send_points_message(player, message_list_eng, rus=False)
                     else:
                         await send_points_message(player, message_list_ru, rus=True)
-                    await asyncio.sleep(10)
+                    await asyncio.sleep(20)
                 else:
                     await bot.send_message(os.environ.get('OFFICER_CHAT_ID'),
                                            f"У {player.name} нету идентификатора в боте.")
