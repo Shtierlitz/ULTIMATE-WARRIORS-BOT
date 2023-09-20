@@ -414,3 +414,32 @@ async def is_member_admin_super(call: types.CallbackQuery = None, super_a: bool 
 def is_valid_name(name):
     # Регулярное выражение, которое проверяет, состоит ли строка только из букв и цифр
     return bool(re.match('^[a-zA-Z0-9_-]*$', name))
+
+
+async def send_id(bot, message: types.Message):
+    # Получить путь к текущему файлу
+    current_file_path = os.path.realpath(__file__)
+    # Получить путь к каталогу текущего файла
+    current_dir_path = os.path.dirname(current_file_path)
+    # Сформировать путь к ids.json
+    ids_file_path = os.path.join(current_dir_path, '..', os.environ.get('IDS_JSON'))
+
+    # Загрузить ids.json в память
+    with open(ids_file_path) as f:
+        guild_members = json.load(f)
+
+    my_chat_id = int(os.environ.get('MY_ID'))
+    user_id = str(message.from_user.id)
+
+    # Найти player_name по user_id
+    player_name = None
+    for dictionary in guild_members:
+        for player_data in dictionary.values():
+            if player_data.get('tg_id') == user_id:
+                player_name = player_data.get('player_name')
+                break
+
+    if player_name:
+        await bot.send_message(my_chat_id, f"ID пользователя: {user_id}, Имя игрока: {player_name}")
+    else:
+        await bot.send_message(my_chat_id, f"ID пользователя: {user_id} не найден в guild_members.")

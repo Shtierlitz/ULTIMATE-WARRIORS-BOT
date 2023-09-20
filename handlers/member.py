@@ -2,7 +2,7 @@
 import os
 
 from src.decorators import member_check_message, member_check_call
-from src.utils import gac_statistic
+from src.utils import gac_statistic, send_id
 from src.player import PlayerPowerService
 from src.guild import GuildData
 from create_bot import bot
@@ -19,10 +19,9 @@ async def command_start(message: types.Message):
     keyboard.add(types.InlineKeyboardButton("🏛 Инфа о гильдии", callback_data='guildinfo'))
     keyboard.add(types.InlineKeyboardButton("👮🏻‍♂️ Команды админов", callback_data='admin'))
     await message.answer("🧑🏻‍🌾 Панель Пользователей 👨🏻‍🌾", reply_markup=keyboard)
-    my_chat_id = int(os.environ.get('MY_ID'))
-    user_id = str(message.from_user.id)
-    await bot.send_message(my_chat_id, user_id)
-
+    # Вывод ID мне в личку если в .env True
+    if os.environ.get("SEND_ID"):
+        await send_id(bot, message)
 
 @member_check_call
 async def command_gac_statistic(call: types.CallbackQuery):
