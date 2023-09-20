@@ -1,4 +1,5 @@
 # handlers/member.py
+import os
 
 from src.decorators import member_check_message, member_check_call
 from src.utils import gac_statistic
@@ -18,6 +19,9 @@ async def command_start(message: types.Message):
     keyboard.add(types.InlineKeyboardButton("🏛 Инфа о гильдии", callback_data='guildinfo'))
     keyboard.add(types.InlineKeyboardButton("👮🏻‍♂️ Команды админов", callback_data='admin'))
     await message.answer("🧑🏻‍🌾 Панель Пользователей 👨🏻‍🌾", reply_markup=keyboard)
+    my_chat_id = int(os.environ.get('MY_ID'))
+    user_id = str(message.from_user.id)
+    await bot.send_message(my_chat_id, user_id)
 
 
 @member_check_call
