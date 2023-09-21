@@ -416,7 +416,7 @@ def is_valid_name(name):
     return bool(re.match('^[a-zA-Z0-9_-]*$', name))
 
 
-async def send_id(bot, message: types.Message):
+async def send_id(message: types.Message):
     # Получить путь к текущему файлу
     current_file_path = os.path.realpath(__file__)
     # Получить путь к каталогу текущего файла
@@ -440,6 +440,6 @@ async def send_id(bot, message: types.Message):
                 break
 
     if player_name:
-        await bot.send_message(my_chat_id, f"ID пользователя: {user_id}, Имя игрока: {player_name}")
+        print(my_chat_id, f"ID пользователя: {user_id}, Имя игрока: {player_name}")
     else:
-        await bot.send_message(my_chat_id, f"ID пользователя: {user_id} не найден в guild_members.")
+        print(my_chat_id, f"ID пользователя: {user_id} не найден в guild_members.")
