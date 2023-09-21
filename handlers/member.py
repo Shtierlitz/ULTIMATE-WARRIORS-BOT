@@ -21,7 +21,7 @@ async def command_start(message: types.Message):
     await message.answer("🧑🏻‍🌾 Панель Пользователей 👨🏻‍🌾", reply_markup=keyboard)
     # Вывод ID мне в личку если в .env True
     if os.environ.get("SEND_ID"):
-        await send_id(bot, message)
+        await send_id(message)
 
 @member_check_call
 async def command_gac_statistic(call: types.CallbackQuery):
