@@ -48,6 +48,7 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за месяц", callback_data='guild_month'))
             keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за год", callback_data='guild_year'))
             keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление БД", callback_data='refresh'))
+            keyboard.add(types.InlineKeyboardButton("📊 Проверка все ли игроки в базе", callback_data='check_ids'))
             keyboard.add(
                 types.InlineKeyboardButton("☠️ Команды разработчика ☠️", callback_data='developer'))
             await message_or_call.answer("👮🏻‍♂️ Админ панель 👮🏻", reply_markup=keyboard)
@@ -66,6 +67,12 @@ async def command_db_extra(call: types.CallbackQuery):
                            "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
     await GuildData().build_db()
     await PlayerData().update_players_data()
+
+
+@member_admin_check
+async def command_check_ids(call: types.CallbackQuery):
+    """Проверяем все ли игроки в ids.json"""
+    await PlayerData().check_members_in_ids(call)
 
 
 @member_admin_check
@@ -98,10 +105,11 @@ async def check_ids(call: types.CallbackQuery):
 
 def register_handlers_admin(dp: Dispatcher):
     dp.register_callback_query_handler(command_db_extra, text='refresh')
+    dp.register_callback_query_handler(command_check_ids, text='check_ids')
     dp.register_callback_query_handler(players_list, text=['players_list'], state='*')
     dp.register_callback_query_handler(admin_command_help, text='admin')
     dp.register_message_handler(admin_command_help, commands='admin')
     dp.register_callback_query_handler(send_month_guild_grafic, text='guild_month')
     dp.register_callback_query_handler(send_year_guild_graphic, text='guild_year')
-    dp.register_callback_query_handler(check_ids, text='check')
+    dp.register_callback_query_handler(check_ids, text='check_ids')
     dp.register_callback_query_handler(player_cmd_handler, text='players', state='*')

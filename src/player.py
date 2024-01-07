@@ -9,15 +9,30 @@ import aiohttp
 import pytz
 import requests
 
-from datetime import datetime, timedelta, time
+from datetime import (
+    datetime,
+    timedelta,
+    time
+)
+
+from aiogram import types
 
 from create_bot import bot
 from db_models import Player
 
 from settings import async_session_maker
 from src.errors import AddIdsError
-from src.utils import get_new_day_start, format_scores, get_localized_datetime, get_end_date
-from sqlalchemy import select, delete, func
+from src.utils import (
+    get_new_day_start,
+    format_scores,
+    get_localized_datetime,
+    get_end_date
+)
+from sqlalchemy import (
+    select,
+    delete,
+    func
+)
 
 HOURS, MINUTES = int(os.environ.get('DAY_UPDATE_HOUR', 16)), int(os.environ.get('DAY_UPDATE_MINUTES', 30))
 
@@ -31,14 +46,51 @@ GUILD_POST_DATA = {
 }
 
 
-class PlayerData:
-    @staticmethod
-    async def get_swgoh_player_data(ally_code):
+class PlayerService:
+    async def get_comlink_guild_data(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f"{API_LINK}/guild", json=GUILD_POST_DATA) as comlink_request:
+                comlink_request.raise_for_status()
+                return await comlink_request.json()
+
+    async def get_swgoh_guild_profile_data(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://api.swgoh.gg/guild-profile/{os.environ.get('GUILD_ID')}") as swgoh_request:
+                swgoh_request.raise_for_status()
+                return await swgoh_request.json()
+
+    async def get_swgoh_player_data(self, ally_code: int) -> dict:
         async with aiohttp.ClientSession() as session:
             async with session.get(f'http://api.swgoh.gg/player/{str(ally_code)}/') as response:
                 if response.status == 200:
                     data = await response.json()
                     return data['data']
+
+
+class PlayerData:
+
+    async def check_members_in_ids(self, call: types.CallbackQuery):
+        """Проверяет все ли члены гильдии были добавлены в ids.json"""
+        data = await PlayerService().get_comlink_guild_data()
+        bad_counter = 0
+        with open("./ids.json", encoding="utf-8") as f:
+            ids_data = json.load(f)  # Загрузить список словарей
+            ids_player_names = [player_info['player_name'] for ids_dict in ids_data for player_info in
+                                ids_dict.values()]
+            counter = 0
+            for player in data['guild']['member']:
+                if player['playerName'] in ids_player_names:
+                    counter += 1
+                else:
+                    bad_counter += 1
+                    message = f"Игрок {player['playerName']} не найден в ids.json"
+                    await bot.send_message(call.message.chat.id, message)
+        if not bad_counter:
+            await bot.send_message(call.message.chat.id,
+                                   f"Проверка ids.json завершена.\nПроверено {counter} игроков.")
+        else:
+            await bot.send_message(call.message.chat.id,
+                                   f"Несколько игроков не находятся в ids.json\nВсего: {bad_counter}")
 
     async def __add_ids(self):
         try:
@@ -124,27 +176,18 @@ class PlayerData:
     async def update_players_data(self):
         """Вытаскивает данные о гильдии и участниках, а после
          по имени участника гоняет циклом обновление бд для каждого участника"""
-        # try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://api.swgoh.gg/guild-profile/{os.environ.get('GUILD_ID')}") as swgoh_request:
-                swgoh_request.raise_for_status()
-                data = await swgoh_request.json()
 
+        data = await PlayerService().get_swgoh_guild_profile_data()
+        raw_data = await PlayerService().get_comlink_guild_data()
         error_list = []
         existing_players = await self.__add_ids()
-
-        # try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(f"{API_LINK}/guild", json=GUILD_POST_DATA) as comlink_request:
-                comlink_request.raise_for_status()
-                raw_data = await comlink_request.json()
 
         guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
         galactic_power_dict = {player: int(data['galacticPower']) for player, data in guild_data_dict.items()}
         try:
             for i in data['data']['members']:
                 if str(i['ally_code']) in existing_players:
-                    final_data: dict = await self.get_swgoh_player_data(i['ally_code'])
+                    final_data: dict = await PlayerService().get_swgoh_player_data(i['ally_code'])
                     final_data.update({'guild_join_time': i['guild_join_time']})
                     final_data.update({'existing_player': existing_players[str(i['ally_code'])]})
                     # try:
