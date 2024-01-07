@@ -73,6 +73,7 @@ async def command_db_extra(call: types.CallbackQuery):
 async def command_check_ids(call: types.CallbackQuery):
     """Проверяем все ли игроки в ids.json"""
     await PlayerData().check_members_in_ids(call)
+    await PlayerData().check_ids_in_guild(call)
 
 
 @member_admin_check

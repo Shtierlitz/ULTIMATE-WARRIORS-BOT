@@ -73,11 +73,11 @@ class PlayerData:
         """Проверяет все ли члены гильдии были добавлены в ids.json"""
         data = await PlayerService().get_comlink_guild_data()
         bad_counter = 0
+        counter = 0
         with open("./ids.json", encoding="utf-8") as f:
             ids_data = json.load(f)  # Загрузить список словарей
             ids_player_names = [player_info['player_name'] for ids_dict in ids_data for player_info in
                                 ids_dict.values()]
-            counter = 0
             for player in data['guild']['member']:
                 if player['playerName'] in ids_player_names:
                     counter += 1
@@ -86,11 +86,41 @@ class PlayerData:
                     message = f"Игрок {player['playerName']} не найден в ids.json"
                     await bot.send_message(call.message.chat.id, message)
         if not bad_counter:
-            await bot.send_message(call.message.chat.id,
-                                   f"Проверка ids.json завершена.\nПроверено {counter} игроков.")
+            await bot.send_message(
+                call.message.chat.id,
+                f"Проверка ids.json завершена.\nВсе игроки из сервера находятся в ids.json\nПроверено {counter} игроков."
+            )
         else:
             await bot.send_message(call.message.chat.id,
                                    f"Несколько игроков не находятся в ids.json\nВсего: {bad_counter}")
+
+    async def check_ids_in_guild(self, call: types.CallbackQuery):
+        """Проверяет, есть ли каждый игрок из ids.json в данных гильдии"""
+        data = await PlayerService().get_comlink_guild_data()
+
+        # Создаем список всех имен игроков из данных гильдии
+        guild_player_names = [player['playerName'] for player in data['guild']['member']]
+
+        with open("./ids.json", encoding="utf-8") as f:
+            ids_data = json.load(f)  # Загрузить список словарей
+            counter = 0
+            bad_counter = 0
+            for ids_dict in ids_data:
+                for player_info in ids_dict.values():
+                    if player_info['player_name'] in guild_player_names:
+                        counter += 1
+                    else:
+                        bad_counter += 1
+                        message = f"Игрок {player_info['player_name']} из ids.json не найден в данных гильдии"
+                        await bot.send_message(call.message.chat.id, message)
+        if not bad_counter:
+            await bot.send_message(
+                call.message.chat.id,
+                f"Проверка сервера завершена.\nВсе игроки из ids.json есть в игре\nПроверено {counter} игроков."
+            )
+        else:
+            await bot.send_message(call.message.chat.id,
+                                   f"Несколько игроков из ids.json не находятся в гильдии\nВсего: {bad_counter}")
 
     async def __add_ids(self):
         try:
