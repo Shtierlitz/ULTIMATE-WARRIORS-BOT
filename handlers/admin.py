@@ -1,4 +1,5 @@
 # handlers/admin.py
+from pprint import pprint
 
 from aiogram import types, Dispatcher
 
@@ -9,7 +10,8 @@ import os
 from src.decorators import member_admin_check, member_super_admin_check
 from src.graphics import get_guild_galactic_power
 from src.guild import GuildData
-from src.player import PlayerData
+from src.player import PlayerData, PlayerService
+from src.uint import UnitUpdateService
 from src.utils import get_players_list_from_ids, \
     check_guild_players, is_admin
 
@@ -52,6 +54,13 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             keyboard.add(
                 types.InlineKeyboardButton("☠️ Команды разработчика ☠️", callback_data='developer'))
             await message_or_call.answer("👮🏻‍♂️ Админ панель 👮🏻", reply_markup=keyboard)
+            # comlink_raw_data = await PlayerService().get_comlink_player(625848338)
+            # data = await PlayerService().get_comlink_data()
+            # pprint(data['units'][0])
+            # data = UpdateRosterService().get_roster_unit_data(comlink_raw_data['rosterUnit'][12])
+            # pprint(comlink_raw_data['rosterUnit'][12])
+            # pprint(data)
+            await UnitUpdateService().create_unit_db()
         else:
             await message_or_call.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:

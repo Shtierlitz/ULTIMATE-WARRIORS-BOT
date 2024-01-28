@@ -17,18 +17,21 @@ from datetime import (
 )
 
 from aiogram import types
+from sqlalchemy.orm import joinedload
 
 from create_bot import bot
-from db_models import Player
+from db_models import Player, Unit
 
 from settings import async_session_maker
-from src.dataclasses import PlayerDataService, PlayerDetailData
+from src.player_service import (
+    PlayerDataService,
+    PlayerDetailData
+)
 from src.errors import AddIdsError
 from src.update_player import UpdatePlayerService
 from src.utils import (
     get_new_day_start,
     format_scores,
-    get_localized_datetime,
     get_end_date
 )
 from sqlalchemy import (
@@ -70,18 +73,6 @@ class PlayerService:
                     data = pre_data['data']
                     return data
 
-    async def get_comlink_player_data(self, player: dict) -> json:
-        post_data = {
-            "payload": {
-                "allyCode": f"{player['ally_code']}"
-            },
-            "enums": False
-        }
-        comlink_player_request = requests.post(f"{API_LINK}/player", json=post_data)
-        comlink_player_request.raise_for_status()
-        comlink_data = comlink_player_request.json()
-        return comlink_data
-
     async def get_comlink_player(self, ally_code: int) -> json:
         post_data = {
             "payload": {
@@ -94,9 +85,52 @@ class PlayerService:
         comlink_data = comlink_player_request.json()
         return comlink_data
 
+    async def get_comlink_data(self) -> json:
+        post_data = {
+            "payload": {
+                "version": "0.33.8:AudpI2yMRQq0bZjGDf888A",
+                "includePveUnits": True,
+                "requestSegment": 3
+            },
+            "enums": False
+        }
+        comlink_player_request = requests.post(f"{API_LINK}/data", json=post_data)
+        comlink_player_request.raise_for_status()
+        comlink_data = comlink_player_request.json()
+        return comlink_data
+
 
 class PlayerData:
 
+    async def get_today_players_ally_codes(self) -> List[int]:
+        new_day_start = get_new_day_start()
+        async with async_session_maker() as session:
+            query = await session.execute(select(Player).where(Player.update_time >= new_day_start))
+            players = query.scalars().all()
+            return [player.ally_code for player in players]
+
+    async def get_today_player_id(self, ally_code: int) -> int:
+        new_day_start = get_new_day_start()
+        async with async_session_maker() as session:
+            query = await session.execute(
+                select(Player).filter_by(ally_code=ally_code).filter(
+                    Player.update_time >= new_day_start))
+            player = query.scalar_one()
+            return player.id
+
+    async def update_players_units(self, player_id: int, units: list[Unit]):
+        new_day_start = get_new_day_start()
+        async with async_session_maker() as session:
+            query = await session.execute(
+                select(Player).options(joinedload(Player.units)).filter_by(id=player_id).filter(
+                    Player.update_time >= new_day_start))
+            player = query.scalars().first()
+
+            if player is not None:
+                for unit in units:
+                    await session.merge(unit)
+                await session.commit()
+        print('OK')
     async def check_members_in_ids(self, call: types.CallbackQuery):
         """Проверяет все ли члены гильдии были добавлены в ids.json"""
         data = await PlayerService().get_comlink_guild_data()
@@ -164,30 +198,7 @@ class PlayerData:
         except Exception as e:
             raise AddIdsError(f"An error occurred while getting ids.json data: {e}") from e
 
-    async def create_or_update_player_data(self, data: dict):
-        new_day_start = get_new_day_start()
-        async with async_session_maker() as session:
-            existing_user_today = await session.execute(
-                select(Player).filter_by(ally_code=data['ally_code']).filter(
-                    Player.update_time >= new_day_start))
-            existing_user_today = existing_user_today.scalars().first()
-
-            if existing_user_today:
-                print(f"{data['name']}: old")
-                await self._set_player_attributes(existing_user_today, data)
-
-                await session.commit()
-            else:
-                print(f"{data['name']}: new")
-                new_user = await self._set_player_attributes(Player(), data)
-                session.add(new_user)
-                await session.commit()
-
-            month_old_date = datetime.now() - timedelta(days=30)
-            await session.execute(delete(Player).where(Player.update_time < month_old_date))
-            await session.commit()
-
-    async def create_or_update_player_data_new(self, data: PlayerDetailData):
+    async def create_or_update_player_data(self, data: PlayerDetailData):
         new_day_start = get_new_day_start()
         async with async_session_maker() as session:
             existing_user_today = await session.execute(
@@ -196,66 +207,21 @@ class PlayerData:
             existing_user_today = existing_user_today.scalars().first()
 
             if existing_user_today:
-                print(f"{data.name}: old old")
-                await UpdatePlayerService().set_player_attributes(existing_user_today, data)
+                print(f"{data.name}: old")
+                user = await UpdatePlayerService().set_player_attributes(existing_user_today, data)
 
                 await session.commit()
             else:
-                print(f"{data.name}: new new")
-                new_user = await UpdatePlayerService().set_player_attributes(Player(), data)
-                session.add(new_user)
+                print(f"{data.name}: new")
+                user = await UpdatePlayerService().set_player_attributes(Player(), data)
+                session.add(user)
                 await session.commit()
 
-            month_old_date = datetime.now() - timedelta(days=30)
-            await session.execute(delete(Player).where(Player.update_time < month_old_date))
+            # Удаляем все записи игроков, которые больше года
+            year_old_date = datetime.now() - timedelta(days=365)
+            await session.execute(delete(Player).where(Player.update_time < year_old_date))
             await session.commit()
-
-
-    async def _set_player_attributes(self, player: Player, data):
-        """Устанавливает значения из переданного словаря в модель Player"""
-        last_updated_utc = datetime.strptime(data['last_updated'], '%Y-%m-%dT%H:%M:%S')
-
-        player.name = data['name']
-        player.ally_code = data['ally_code']
-        player.tg_id = data['existing_player']['tg_id']
-        player.tg_nic = data['existing_player']['tg_nic']
-        player.update_time = datetime.now()
-        player.reid_points = data['reid_points']
-
-        player.lastActivityTime = get_localized_datetime(int(data['lastActivityTime']),
-                                                         str(os.environ.get('TIME_ZONE')))
-
-        player.level = data['level']
-        player.player_id = data['playerId']
-        player.arena_rank = data['comlink_arena_rank']
-        player.fleet_arena_rank = data['comlink_fleet_arena_rank']
-        player.galactic_power = data['comlink_galactic_power']
-        player.character_galactic_power = data['character_galactic_power']
-        player.ship_galactic_power = data['ship_galactic_power']
-        player.guild_join_time = datetime.strptime(data['guild_join_time'], "%Y-%m-%dT%H:%M:%S")
-        player.url = 'https://swgoh.gg' + data['url']
-
-        player.last_swgoh_updated = last_updated_utc
-        player.guild_currency_earned = data['guild_points']
-        player.arena_leader_base_id = data['arena_leader_base_id']
-        player.ship_battles_won = data['ship_battles_won']
-        player.pvp_battles_won = data['pvp_battles_won']
-        player.pve_battles_won = data['pve_battles_won']
-        player.pve_hard_won = data['pve_hard_won']
-        player.galactic_war_won = data['galactic_war_won']
-        player.guild_raid_won = data['guild_raid_won']
-        player.guild_exchange_donations = data['guild_exchange_donations']
-        player.season_status = data['season_status']
-        player.season_full_clears = data['season_full_clears']
-        player.season_successful_defends = data['season_successful_defends']
-        player.season_league_score = data['season_league_score']
-        player.season_undersized_squad_wins = data['season_undersized_squad_wins']
-        player.season_promotions_earned = data['season_promotions_earned']
-        player.season_banners_earned = data['season_banners_earned']
-        player.season_offensive_battles_won = data['season_offensive_battles_won']
-        player.season_territories_defeated = data['season_territories_defeated']
-
-        return player
+            return user.id
 
     async def update_players_data(self):
         """Вытаскивает данные о гильдии и участниках, а после
@@ -266,8 +232,6 @@ class PlayerData:
         raw_data = await PlayerService().get_comlink_guild_data()
         error_list = []
         existing_players = await self.__add_ids()
-        guild_data_dict = {player['playerName']: player for player in raw_data['guild']['member']}
-        galactic_power_dict = {player: int(data['galacticPower']) for player, data in guild_data_dict.items()}
         try:
             for player in swgoh_guild_player_data:
                 if str(player.ally_code) in existing_players:
@@ -276,45 +240,11 @@ class PlayerData:
                     result_data = await UpdatePlayerService().update_final_data(
                         player, existing_players, raw_data, swgoh_player_data, comlink_raw_data
                     )
-                    await self.create_or_update_player_data_new(result_data)
+                    user_id = await self.create_or_update_player_data(result_data)
                 else:
                     message = f"Игрок {player.player_name} отсутствует в гильдии. Обновите ids.json и дождитесь обновления swgoh.gg"
                     await bot.send_message(int(os.environ.get('MY_ID')), message)
                     error_list.append(message)
-        # try:
-        #     for player in data['data']['members']:
-        #         if str(player['ally_code']) in existing_players:
-        #             final_data: dict = await PlayerService().get_swgoh_player_data(player['ally_code'])
-        #
-        #             final_data.update({'guild_join_time': player['guild_join_time']})
-        #             final_data.update({'existing_player': existing_players[str(player['ally_code'])]})
-        #             # try:
-        #             comlink_data = await PlayerService().get_comlink_player_data(player)
-        #
-        #             final_data.update({'name': comlink_data['name']})
-        #             final_data.update({'level': comlink_data['level']})
-        #             final_data.update({'playerId': comlink_data['playerId']})
-        #             final_data.update({'lastActivityTime': comlink_data['lastActivityTime']})
-        #             final_data.update({'comlink_arena_rank': comlink_data['pvpProfile'][0]['rank']})
-        #             final_data.update({'comlink_fleet_arena_rank': comlink_data['pvpProfile'][1]['rank']})
-        #             final_data.update({'comlink_galactic_power': galactic_power_dict[comlink_data['name']]})
-        #             try:
-        #                 member_contribution_dict = {item['type']: item['currentValue'] for item in
-        #                                             guild_data_dict[comlink_data['name']]['memberContribution']}
-        #                 final_data.update({'season_status': len(guild_data_dict[comlink_data['name']]['seasonStatus'])})
-        #
-        #                 final_data.update({'reid_points': member_contribution_dict[2]})
-        #                 final_data.update({'guild_points': member_contribution_dict[1]})
-        #             except KeyError:
-        #                 message = f"Игрок {player['player_name']} удален из гильдии. Обновите ids.json. Сотрите малейшие воспоминания об этом непотребстве!"
-        #                 error_list.append(message)
-        #                 await bot.send_message(int(os.environ.get('OFFICER_CHAT_ID')), message)
-        #                 continue
-        #             await self.create_or_update_player_data(final_data)
-        #
-        #         else:
-        #             message = f"Игрок {player['player_name']} отсутствует в гильдии. Обновите ids.json и дождитесь обновления swgoh.gg"
-        #             error_list.append(message)
         except Exception as e:
             message = f"❌❌Произошла ошибка при парсинге API в классе Player❌❌\n\n{e}"
             await bot.send_message(int(os.environ.get('MY_ID')), message)

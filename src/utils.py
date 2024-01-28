@@ -81,6 +81,7 @@ def get_new_day_start() -> datetime:
 
     if now < new_day_start:
         new_day_start = new_day_start - timedelta(days=1)
+        print(new_day_start)
 
     return new_day_start
 

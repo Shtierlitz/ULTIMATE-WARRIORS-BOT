@@ -3,7 +3,11 @@ import os
 from datetime import datetime
 
 from db_models import Player
-from src.dataclasses import PlayerDetailData, PlayerDataService, SwgohGuildPlayerData
+from src.player_service import (
+    PlayerDetailData,
+    PlayerDataService,
+    SwgohGuildPlayerData
+)
 from src.utils import get_localized_datetime
 
 
@@ -78,4 +82,8 @@ class UpdatePlayerService:
         player.season_offensive_battles_won = data.season_offensive_battles_won
         player.season_territories_defeated = data.season_territories_defeated
 
+        return player
+
+    async def update_player_units(self, player: Player, units: list) -> Player:
+        player.units = units
         return player

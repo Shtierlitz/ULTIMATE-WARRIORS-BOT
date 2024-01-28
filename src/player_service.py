@@ -199,11 +199,6 @@ class PlayerDataService:
         ]
         return result
 
-    async def get_comlink_guild_player_dict(self, raw_data: json) -> dict[ComlinkGuildPlayerData]:
-        result = {player['playerName']: await self.get_comlink_guild_player_detail_data(player) for player in
-                  raw_data['guild']['member']}
-        return result
-
     async def get_comlink_guild_player_data(self, raw_data: json, player_name: str):
         for member in raw_data['guild']['member']:
             if member['playerName'] == player_name:
