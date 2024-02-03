@@ -150,7 +150,8 @@ class UnitMod(Base):
     secondary_stats = relationship(
         "SecondaryStat",
         backref="unit_mod",
-        foreign_keys="[SecondaryStat.unit_mod_id]"
+        foreign_keys="[SecondaryStat.unit_mod_id]",
+        lazy='noload'
     )
     sell_value = Column(JSON)  # Можно хранить как JSON
     tier = Column(Integer)
@@ -185,7 +186,7 @@ class Unit(Base):
     purchased_ability_id = Column(JSON)  # Можно хранить как JSON
     relic = Column(JSON)  # Можно хранить как JSON
     # Отношения с другими таблицами
-    equippedStatMod = relationship("UnitMod", backref="unit")
-    skill = relationship("UnitSkill", backref="unit")
+    equipped_stat_mod = relationship("UnitMod", backref="unit", lazy='noload')
+    skill = relationship("UnitSkill", backref="unit", lazy='noload')
     update_time = Column(DateTime, default=datetime.now())
     unit_stat = Column(PickleType, nullable=True, default=None)

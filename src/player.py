@@ -3,41 +3,37 @@
 import json
 import os
 from collections import defaultdict
-from pprint import pprint
-from typing import List
-
-import aiohttp
-import pytz
-import requests
-
 from datetime import (
     datetime,
     timedelta,
     time
 )
+from typing import List
 
+import aiohttp
+import pytz
+import requests
 from aiogram import types
+from sqlalchemy import (
+    select,
+    delete,
+    func
+)
 from sqlalchemy.orm import joinedload
 
 from create_bot import bot
 from db_models import Player, Unit
-
 from settings import async_session_maker
+from src.errors import AddIdsError
 from src.player_service import (
     PlayerDataService,
     PlayerDetailData
 )
-from src.errors import AddIdsError
 from src.update_player import UpdatePlayerService
 from src.utils import (
     get_new_day_start,
     format_scores,
     get_end_date
-)
-from sqlalchemy import (
-    select,
-    delete,
-    func
 )
 
 HOURS, MINUTES = int(os.environ.get('DAY_UPDATE_HOUR', 16)), int(os.environ.get('DAY_UPDATE_MINUTES', 30))
@@ -124,13 +120,13 @@ class PlayerData:
             query = await session.execute(
                 select(Player).options(joinedload(Player.units)).filter_by(id=player_id).filter(
                     Player.update_time >= new_day_start))
-            player = query.scalars().first()
+            query.scalars().first()
+            for unit in units:
+                await session.merge(unit)
+            await session.commit()
+            print('OK')
 
-            if player is not None:
-                for unit in units:
-                    await session.merge(unit)
-                await session.commit()
-        print('OK')
+
     async def check_members_in_ids(self, call: types.CallbackQuery):
         """Проверяет все ли члены гильдии были добавлены в ids.json"""
         data = await PlayerService().get_comlink_guild_data()

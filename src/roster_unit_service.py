@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from pprint import pprint
 from typing import Any, Optional
+
+from sqlalchemy.testing import db
+
 from settings import Base
 from db_models import (
     Unit,
@@ -214,41 +217,43 @@ class CreateUnitService:
     async def update_today_units(self) -> Unit:
         new_day_start = get_new_day_start()
         async with async_session_maker() as session:
-            query = await session.execute(
-                select(Unit).filter_by(player_id=self.roster_data.player_id).filter(
-                    Unit.update_time >= new_day_start))
-            existing_units_today = query.scalars().all()
+            async with session.begin():
+                query = await session.execute(
+                    select(Unit).filter_by(
+                        player_id=self.player_id,
+                        definition_id=self.roster_data.definitionId
+                    ).filter(
+                        Unit.update_time >= new_day_start
+                    )
+                )
+                existing_unit_today = query.scalars().first()
 
-            if existing_units_today:
-                for unit in existing_units_today:
-                    new_unit = await self.set_unit_attributes(unit)
-                    await session.update(new_unit)
-                    await session.commit()
-            else:
-                new_unit = await self.set_unit_attributes(Unit())
-                if new_unit:
+                if existing_unit_today:
+                    updated_unit = await self.set_unit_attributes(existing_unit_today)
+                    return updated_unit
+                else:
+                    new_unit = await self.set_unit_attributes(Unit())
                     session.add(new_unit)
-                    await session.commit()
                     return new_unit
 
     async def set_unit_attributes(self, unit: Unit) -> Unit:
-        """Устанавливает значения из переданного словаря в модель Unit"""
+        """Set values from the given dictionary into the Unit model"""
         data = self.roster_data
         unit.player_id = self.player_id
         unit.unit_id = data.unit_id
-        unit.definitionId = data.definitionId
-        unit.currentLevel = data.currentLevel
-        unit.currentRarity = data.currentRarity
-        unit.currentTier = data.currentTier
-        unit.currentXp = data.currentXp
+        unit.definition_id = data.definitionId  # Исправлено на соответствующее имя поля в модели
+        unit.current_level = data.currentLevel
+        unit.current_rarity = data.currentRarity
+        unit.current_tier = data.currentTier
+        unit.current_xp = data.currentXp
         unit.equipment = data.equipment
-        unit.equippedStatMod = await self.get_or_create_unit_mods(unit)
-        unit.equippedStatModOld = data.equippedStatModOld
-        unit.promotionRecipeReference = data.promotionRecipeReference
-        unit.purchasedAbilityId = data.purchasedAbilityId
+        unit.equipped_stat_mod_old = data.equippedStatModOld
+        unit.promotion_recipe_reference = data.promotionRecipeReference
+        unit.purchased_ability_id = data.purchasedAbilityId
         unit.relic = data.relic
         unit.skill = await self.get_or_create_unit_skills(unit)
-        unit.unitStat = data.unitStat
+        unit.unit_stat = data.unitStat
+        unit.equipped_stat_mod = await self.get_or_create_unit_mods(unit)
         unit.update_time = datetime.now()
         return unit
 
@@ -260,14 +265,11 @@ class CreateUnitService:
                 select(UnitSkill).filter_by(unit_id=unit.id).filter(
                     UnitSkill.update_time >= new_day_start))
             unit_skills = query.scalars().all()
-            if unit_skills:
-                return unit_skills
-            if unit_skills:
+            if not unit_skills:
                 unit_skills = await self.create_unit_skils(unit)
-                await session.add_all(unit_skills)
                 await session.commit()
-                return unit_skills
-            return []
+
+            return unit_skills
 
     async def create_unit_skils(self, unit: Unit) -> list[UnitSkill]:
         return [
@@ -290,11 +292,8 @@ class CreateUnitService:
             if unit_mods:
                 return unit_mods
             unit_mods = await self.create_unit_mods(unit)
-            if unit_mods:
-                session.add_all(unit_mods)
-                await session.commit()
-                return unit_mods
-            return []
+            session.add_all(unit_mods)
+            return unit_mods
 
     async def create_unit_mods(self, unit: Unit) -> list[UnitMod]:
         data = [

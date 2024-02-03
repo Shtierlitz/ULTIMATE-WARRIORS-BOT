@@ -7,13 +7,20 @@ from create_bot import bot
 import io
 import os
 
-from src.decorators import member_admin_check, member_super_admin_check
+from src.decorators import (
+    member_admin_check,
+    member_super_admin_check
+)
 from src.graphics import get_guild_galactic_power
 from src.guild import GuildData
-from src.player import PlayerData, PlayerService
-from src.uint import UnitUpdateService
-from src.utils import get_players_list_from_ids, \
-    check_guild_players, is_admin
+from src.player import PlayerData
+from src.player_units_provider import PlayerUnitsProvider
+from src.uint import UnitAggregateService
+from src.utils import (
+    get_players_list_from_ids,
+    check_guild_players,
+    is_admin
+)
 
 
 @member_super_admin_check
@@ -50,17 +57,12 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за месяц", callback_data='guild_month'))
             keyboard.add(types.InlineKeyboardButton("📊 График ГМ гильдии за год", callback_data='guild_year'))
             keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление БД", callback_data='refresh'))
+            keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление юнитов", callback_data='refresh_units'))
             keyboard.add(types.InlineKeyboardButton("📊 Проверка все ли игроки в базе", callback_data='check_ids'))
             keyboard.add(
                 types.InlineKeyboardButton("☠️ Команды разработчика ☠️", callback_data='developer'))
             await message_or_call.answer("👮🏻‍♂️ Админ панель 👮🏻", reply_markup=keyboard)
-            # comlink_raw_data = await PlayerService().get_comlink_player(625848338)
-            # data = await PlayerService().get_comlink_data()
-            # pprint(data['units'][0])
-            # data = UpdateRosterService().get_roster_unit_data(comlink_raw_data['rosterUnit'][12])
-            # pprint(comlink_raw_data['rosterUnit'][12])
-            # pprint(data)
-            await UnitUpdateService().create_unit_db()
+            await PlayerUnitsProvider().get_units(176799281)
         else:
             await message_or_call.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
@@ -68,6 +70,13 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             "Вы не являетесь членом гильдии или не подали свой тг ID офицерам. Комманда запрещена."
             "\nДля вступления в гильдию напишите старшему офицеру в личку:\nhttps://t.me/rollbar")
 
+
+@member_admin_check
+async def command_unit_db_extra(call: types.CallbackQuery):
+    """Стартуем бот и обновляем БД"""
+    await bot.send_message(call.message.chat.id,
+                           "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
+    await UnitAggregateService().create_or_update_unit()
 
 @member_admin_check
 async def command_db_extra(call: types.CallbackQuery):
@@ -115,6 +124,7 @@ async def check_ids(call: types.CallbackQuery):
 
 def register_handlers_admin(dp: Dispatcher):
     dp.register_callback_query_handler(command_db_extra, text='refresh')
+    dp.register_callback_query_handler(command_unit_db_extra, text='refresh_units')
     dp.register_callback_query_handler(command_check_ids, text='check_ids')
     dp.register_callback_query_handler(players_list, text=['players_list'], state='*')
     dp.register_callback_query_handler(admin_command_help, text='admin')
