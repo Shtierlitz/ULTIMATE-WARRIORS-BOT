@@ -3,9 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pprint import pprint
 
+from aiogram import types
+from aiogram.types import Message
 from sqlalchemy import select, desc
 from sqlalchemy.orm import joinedload
 
+from create_bot import bot
 from db_models import Player
 from settings import async_session_maker
 from src.roster_unit_service import RosterUnitData
@@ -74,7 +77,7 @@ class PlayerUnitDataService:
 
     async def create_unit_relic(self, relic: int) -> int:
         relic_mapping = {
-            1: 0,
+            1: None,
             2: 0,
             3: 1,
             4: 2,
@@ -99,21 +102,38 @@ class PlayerUnitDataService:
 
 
 class PlayerUnitsProvider:
-    async def get_units(self, ally_code: int):
+    async def get_units(self, message: Message, player_name: str):
         """Получает список персонажей игрока"""
+        try:
+            player = await self.get_player(player_name)
+        except Exception as e:
+            await bot.send_message(
+                message.chat.id,
+                 f"❌ Игрок с именем {player_name} отсутствует\n"
+                 f"Проверьте правильность написания имени"
+            )
+            return
+        units = await PlayerUnitDataService().get_unit_data_by_name(player, 'han')
+        return await self.convert_unit_data_to_message(units)
 
-        player = await self.get_player(ally_code)
-        units = await PlayerUnitDataService().get_unit_data_by_name(player, 'merr')
+    async def convert_unit_data_to_message(self, units: list[UnitStatsData]):
+        """Конвертирует данные персонажей в сообщение"""
+        message = ''
         for unit in units:
-            print(unit)
+            message += f"{unit.name},\nЗвезды: {unit.stars}, Уровень: {unit.level}, " \
+                       f"Тир: {unit.tier}, Рел: {unit.relic if unit.relic is not None else 'нету'}, " \
+                    f"ГМ: {unit.xp}\n\n"
+        return message
 
-    async def get_player(self, ally_code: int):
+    async def get_player(self, player_name: str):
         async with async_session_maker() as session:
             result = await session.execute(
                 select(Player)
-                .where(Player.ally_code == ally_code)
+                .where(Player.name == player_name)
                 .options(joinedload(Player.units))
                 .order_by(desc(Player.update_time))
             )
             player = result.scalars().first()
             return player
+
+

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from dataclasses import dataclass
 from datetime import datetime
@@ -104,7 +106,7 @@ class RosterUnitData:
     unit_id: str
     promotionRecipeReference: str
     purchasedAbilityId: list
-    relic: dict
+    relic: dict | None
     equippedStatMod: list[UnitModsData] = None
     skill: list[UnitSkillData] = None
     unitStat: Optional[Any] = None

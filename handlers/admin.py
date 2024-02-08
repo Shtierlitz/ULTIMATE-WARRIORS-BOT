@@ -59,10 +59,10 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление БД", callback_data='refresh'))
             keyboard.add(types.InlineKeyboardButton("🏗 Экстреннее обновление юнитов", callback_data='refresh_units'))
             keyboard.add(types.InlineKeyboardButton("📊 Проверка все ли игроки в базе", callback_data='check_ids'))
+            keyboard.add(types.InlineKeyboardButton("🔍 Найти юнит", callback_data='find_unit'))
             keyboard.add(
                 types.InlineKeyboardButton("☠️ Команды разработчика ☠️", callback_data='developer'))
             await message_or_call.answer("👮🏻‍♂️ Админ панель 👮🏻", reply_markup=keyboard)
-            await PlayerUnitsProvider().get_units(176799281)
         else:
             await message_or_call.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:

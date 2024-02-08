@@ -136,6 +136,20 @@ def member_admin_state_message_check(func):
 
     return wrapper
 
+def member_state_message_check(func):
+    """Декоратор на проверки членства, администрации для call и состояния"""
+
+    @wraps(func)
+    async def wrapper(message: types.Message, state: FSMContext):
+        is_guild_member, admin = await is_member_admin_super(message=message)
+        if is_guild_member:
+            try:
+                return await func(message, state)
+            except Exception as e:
+                await message.reply(
+                    f"Ошибка:\n\n❌❌{e}❌❌\n\nОбратитесь разработчику бота в личку:\nhttps://t.me/rollbar")
+                await state.finish()
+    return wrapper
 
 def member_admin_super_state_call_check(func):
     """Декоратор на проверки членства, администрации, супер-администрации для call и состояния"""

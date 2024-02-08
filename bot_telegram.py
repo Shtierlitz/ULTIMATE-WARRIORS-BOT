@@ -6,12 +6,24 @@ import os
 
 import apsched
 from aiogram.utils import executor
-from handlers import member, admin, player_data_state, send_group_message, developer, send_message_everyone, \
-    add_player_state, \
-    reid_points, delete_player_state, delete_player_db_state
+from handlers import (
+    member,
+    admin,
+    player_data_state,
+    send_group_message,
+    developer,
+    send_message_everyone,
+    add_player_state,
+    reid_points,
+    delete_player_state,
+    delete_player_db_state,
+    get_unit_state
+)
 from create_bot import dp
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import logging
+
+from src.uint import UnitAggregateService
 
 
 async def on_startup(_):  # функция настроек старта бота.
@@ -29,7 +41,7 @@ async def on_startup(_):  # функция настроек старта бот�
     scheduler.add_job(apsched.final_gp_per_month, 'cron',
                       hour=int(os.environ.get("REMIND_LAST_MONTH_POINTS_HOUR", 16)),
                       minute=int(os.environ.get("REMIND_LAST_MONTH_POINTS_MINUTES", 25)))
-
+    # await UnitAggregateService().create_or_update_unit() # удалить когда будет готовы юниты
     scheduler.start()
 
 
@@ -41,6 +53,7 @@ delete_player_state.register_handlers_delete_player(dp)
 delete_player_db_state.register_handlers_delete_db_player(dp)
 send_group_message.register_handlers_group_message(dp)
 send_message_everyone.register_handlers_message_all(dp)
+get_unit_state.register_handlers_find_unit(dp)
 
 admin.register_handlers_admin(dp)
 developer.register_handlers_developer(dp)
