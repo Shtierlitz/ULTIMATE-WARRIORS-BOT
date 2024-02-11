@@ -2,7 +2,9 @@ import json
 import os
 from datetime import datetime
 
-from db_models import Player
+import pytz
+
+from db_models import Player, get_current_time_with_timezone
 from src.player_service import (
     PlayerDetailData,
     PlayerDataService,
@@ -42,46 +44,50 @@ class UpdatePlayerService:
         result_data.guild_points = comlink_player_data.memberContribution[1].currentValue
         return result_data
 
+
+
     async def set_player_attributes(self, player: Player, data: PlayerDetailData) -> Player:
         """Устанавливает значения из переданного словаря в модель Player"""
-        last_updated_utc = datetime.strptime(data.last_updated, '%Y-%m-%dT%H:%M:%S')
-        player.name = data.name
-        player.ally_code = data.ally_code
-        player.tg_id = data.existing_player.tg_id
-        player.tg_nic = data.existing_player.tg_nic
-        player.update_time = datetime.now()
-        player.reid_points = data.reid_points
-        player.lastActivityTime = get_localized_datetime(int(data.lastActivityTime),
-                                                         str(os.environ.get('TIME_ZONE')))
-        player.level = data.level
-        player.player_id = data.playerId
-        player.arena_rank = data.comlink_arena_rank
-        player.fleet_arena_rank = data.comlink_fleet_arena_rank
-        player.galactic_power = int(data.galactic_power)
-        player.character_galactic_power = data.character_galactic_power
-        player.ship_galactic_power = data.ship_galactic_power
-        player.guild_join_time = datetime.strptime(data.guild_join_time, "%Y-%m-%dT%H:%M:%S")
-        player.url = 'https://swgoh.gg' + data.url
-        player.last_swgoh_updated = last_updated_utc
-        player.guild_currency_earned = data.guild_points
-        player.arena_leader_base_id = data.arena_leader_base_id
-        player.ship_battles_won = data.ship_battles_won
-        player.pvp_battles_won = data.pvp_battles_won
-        player.pve_battles_won = data.pve_battles_won
-        player.pve_hard_won = data.pve_hard_won
-        player.galactic_war_won = data.galactic_war_won
-        player.guild_raid_won = data.guild_raid_won
-        player.guild_exchange_donations = data.guild_exchange_donations
-        player.season_status = data.season_status
-        player.season_full_clears = data.season_full_clears
-        player.season_successful_defends = data.season_successful_defends
-        player.season_league_score = data.season_league_score
-        player.season_undersized_squad_wins = data.season_undersized_squad_wins
-        player.season_promotions_earned = data.season_promotions_earned
-        player.season_banners_earned = data.season_banners_earned
-        player.season_offensive_battles_won = data.season_offensive_battles_won
-        player.season_territories_defeated = data.season_territories_defeated
-
+        try:
+            last_updated_utc = datetime.strptime(data.last_updated, '%Y-%m-%dT%H:%M:%S')
+            player.name = data.name
+            player.ally_code = data.ally_code
+            player.tg_id = data.existing_player.tg_id
+            player.tg_nic = data.existing_player.tg_nic
+            player.update_time = get_current_time_with_timezone()
+            player.reid_points = data.reid_points
+            player.lastActivityTime = get_localized_datetime(int(data.lastActivityTime),
+                                                             str(os.environ.get('TIME_ZONE')))
+            player.level = data.level
+            player.player_id = data.playerId
+            player.arena_rank = data.comlink_arena_rank
+            player.fleet_arena_rank = data.comlink_fleet_arena_rank
+            player.galactic_power = int(data.galactic_power)
+            player.character_galactic_power = data.character_galactic_power
+            player.ship_galactic_power = data.ship_galactic_power
+            player.guild_join_time = datetime.strptime(data.guild_join_time, "%Y-%m-%dT%H:%M:%S")
+            player.url = 'https://swgoh.gg' + data.url
+            player.last_swgoh_updated = last_updated_utc
+            player.guild_currency_earned = data.guild_points
+            player.arena_leader_base_id = data.arena_leader_base_id
+            player.ship_battles_won = data.ship_battles_won
+            player.pvp_battles_won = data.pvp_battles_won
+            player.pve_battles_won = data.pve_battles_won
+            player.pve_hard_won = data.pve_hard_won
+            player.galactic_war_won = data.galactic_war_won
+            player.guild_raid_won = data.guild_raid_won
+            player.guild_exchange_donations = data.guild_exchange_donations
+            player.season_status = data.season_status
+            player.season_full_clears = data.season_full_clears
+            player.season_successful_defends = data.season_successful_defends
+            player.season_league_score = data.season_league_score
+            player.season_undersized_squad_wins = data.season_undersized_squad_wins
+            player.season_promotions_earned = data.season_promotions_earned
+            player.season_banners_earned = data.season_banners_earned
+            player.season_offensive_battles_won = data.season_offensive_battles_won
+            player.season_territories_defeated = data.season_territories_defeated
+        except Exception as e:
+            print(e)
         return player
 
     async def update_player_units(self, player: Player, units: list) -> Player:

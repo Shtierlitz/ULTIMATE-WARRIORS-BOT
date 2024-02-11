@@ -13,8 +13,9 @@ from src.decorators import (
 )
 from src.graphics import get_guild_galactic_power
 from src.guild import GuildData
-from src.player import PlayerData
+from src.player import PlayerData, PlayerService
 from src.player_units_provider import PlayerUnitsProvider
+from src.roster_unit_service import RosterDataService
 from src.uint import UnitAggregateService
 from src.utils import (
     get_players_list_from_ids,
@@ -63,6 +64,7 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             keyboard.add(
                 types.InlineKeyboardButton("☠️ Команды разработчика ☠️", callback_data='developer'))
             await message_or_call.answer("👮🏻‍♂️ Админ панель 👮🏻", reply_markup=keyboard)
+            # pprint(await RosterDataService().get_russian_localized_unit_name(BOBAFETT))
         else:
             await message_or_call.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:

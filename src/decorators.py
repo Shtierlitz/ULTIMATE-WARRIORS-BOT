@@ -137,7 +137,7 @@ def member_admin_state_message_check(func):
     return wrapper
 
 def member_state_message_check(func):
-    """Декоратор на проверки членства, администрации для call и состояния"""
+    """Декоратор на проверки членства для call и состояния"""
 
     @wraps(func)
     async def wrapper(message: types.Message, state: FSMContext):

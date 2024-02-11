@@ -45,6 +45,7 @@ async def create_player_info_keyboard(player_name: str):
         keyboard.row(KeyboardButton("🔙Назад"),
                      KeyboardButton("Отмена❌"))
         keyboard.row(KeyboardButton("🗒Все данные"))
+        keyboard.row(KeyboardButton("👯Юниты"))
         keyboard.row(KeyboardButton("📊 энка за месяц"))
         keyboard.row(KeyboardButton("📊 ГМ за месяц"), KeyboardButton("📊 ГМ за все время"))
         keyboard.row(KeyboardButton("📊 пешка за месяц"), KeyboardButton("📊 флот за месяц"))

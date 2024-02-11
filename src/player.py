@@ -17,7 +17,7 @@ from aiogram import types
 from sqlalchemy import (
     select,
     delete,
-    func
+    func, desc
 )
 from sqlalchemy.orm import joinedload
 
@@ -84,7 +84,7 @@ class PlayerService:
     async def get_comlink_data(self) -> json:
         post_data = {
             "payload": {
-                "version": "0.33.8:AudpI2yMRQq0bZjGDf888A",
+                f"version": "0.33.8:AudpI2yMRQq0bZjGDf888A",
                 "includePveUnits": True,
                 "requestSegment": 3
             },
@@ -95,6 +95,66 @@ class PlayerService:
         comlink_data = comlink_player_request.json()
         return comlink_data
 
+    async def get_comlink_stat_mod_data(self) -> json:
+        # "0.33.8:AudpI2yMRQq0bZjGDf888A"
+        latest_version = await self.get_comlink_latest_version()
+        post_data = {
+            "payload": {
+                f"version": latest_version,
+                "includePveUnits": True,
+                "requestSegment": 2
+            },
+            "enums": False
+        }
+        comlink_player_request = requests.post(f"{API_LINK}/data", json=post_data)
+        comlink_player_request.raise_for_status()
+        comlink_data = comlink_player_request.json()
+        return comlink_data['statModSet']
+
+    async def get_comlink_latest_version(self) -> json:
+        post_data = {
+            "payload": {
+                "clientSpecs": {}
+            },
+            "enums": False
+        }
+        comlink_player_request = requests.post(f"{API_LINK}/metadata", json=post_data)
+        comlink_player_request.raise_for_status()
+        comlink_data = comlink_player_request.json()
+        return comlink_data['latestGamedataVersion']
+
+    async def get_comlink_latest_bundle_version(self) -> json:
+        post_data = {
+            "payload": {
+                "clientSpecs": {}
+            },
+            "enums": False
+        }
+        comlink_player_request = requests.post(f"{API_LINK}/metadata", json=post_data)
+        comlink_player_request.raise_for_status()
+        comlink_data = comlink_player_request.json()
+        return comlink_data['latestLocalizationBundleVersion']
+
+    async def update_localization_data(self) -> json:
+        boundle_version = await self.get_comlink_latest_bundle_version()
+        post_data = {
+            "payload": {
+                "id": boundle_version
+            },
+            "unzip": True
+        }
+        comlink_player_request = requests.post(f"{API_LINK}/localization", json=post_data)
+        comlink_player_request.raise_for_status()
+        comlink_data = comlink_player_request.json()
+        localization_data = {}
+        for line in comlink_data['Loc_RUS_RU.txt'].splitlines():
+            if '|' in line:  # Проверка на наличие символа '|'
+                key, value = line.split('|', 1)  # Разделение строки на ключ и значение
+                localization_data[key] = value
+            else:
+                continue  # Пропускаем строки без символа '|'
+        with open("./localization.json", "w", encoding="utf-8") as f:
+            json.dump(localization_data, f, ensure_ascii=False)
 
 class PlayerData:
 
@@ -111,7 +171,7 @@ class PlayerData:
             query = await session.execute(
                 select(Player).filter_by(ally_code=ally_code).filter(
                     Player.update_time >= new_day_start))
-            player = query.scalar_one()
+            player = query.scalars().first()
             return player.id
 
     async def update_players_units(self, player_id: int, units: list[Unit]):
@@ -126,6 +186,16 @@ class PlayerData:
             await session.commit()
             print('OK')
 
+    async def get_player(self, player_name: str):
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(Player)
+                .where(Player.name == player_name)
+                .options(joinedload(Player.units))
+                .order_by(desc(Player.update_time))
+            )
+            player = result.scalars().first()
+            return player
 
     async def check_members_in_ids(self, call: types.CallbackQuery):
         """Проверяет все ли члены гильдии были добавлены в ids.json"""
@@ -196,16 +266,16 @@ class PlayerData:
 
     async def create_or_update_player_data(self, data: PlayerDetailData):
         new_day_start = get_new_day_start()
+        # print(new_day_start)
         async with async_session_maker() as session:
             existing_user_today = await session.execute(
                 select(Player).filter_by(ally_code=data.ally_code).filter(
                     Player.update_time >= new_day_start))
             existing_user_today = existing_user_today.scalars().first()
-
             if existing_user_today:
+                # print(existing_user_today.update_time)
                 print(f"{data.name}: old")
                 user = await UpdatePlayerService().set_player_attributes(existing_user_today, data)
-
                 await session.commit()
             else:
                 print(f"{data.name}: new")

@@ -34,6 +34,7 @@ async def on_startup(_):  # функция настроек старта бот�
                       minute=int(os.environ.get("REMIND_GUILD_POINTS_MINUTES", 30)),
                       timezone=os.environ.get("TIME_ZONE", "UTC"))
     scheduler.add_job(apsched.update_db, trigger='interval', minutes=5)
+    scheduler.add_job(apsched.update_units, trigger='interval', hours=2)
     # Добавляем задачу, которая будет запускаться в последний день каждого месяца в выбранное время в .env или в 16:20
     scheduler.add_job(apsched.final_points_per_month, 'cron',
                       hour=int(os.environ.get("REMIND_LAST_MONTH_POINTS_HOUR", 16)),

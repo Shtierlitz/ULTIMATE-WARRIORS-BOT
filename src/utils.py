@@ -3,20 +3,20 @@ import asyncio
 import json
 import os
 import random
+import random as rn
 import re
+from datetime import datetime, timedelta, time
 from typing import Tuple, List
 
 import aiohttp
 import pytz
-from datetime import datetime, timedelta, time
 from aiogram import types, Bot
+from aiogram.utils.exceptions import ChatNotFound
 from sqlalchemy import select
 
 from create_bot import bot
 from db_models import Player
 from settings import async_session_maker
-from aiogram.utils.exceptions import ChatNotFound
-import random as rn
 
 
 async def gac_statistic() -> tuple:
@@ -78,10 +78,10 @@ def get_new_day_start() -> datetime:
     today = now.date()
     new_day_start = datetime.combine(today, time(int(os.environ.get("DAY_UPDATE_HOUR", "16")),
                                                  int(os.environ.get("DAY_UPDATE_MINUTES", "30"))))
-
+    # print(now)
+    # print(new_day_start)
     if now < new_day_start:
         new_day_start = new_day_start - timedelta(days=1)
-        print(new_day_start)
 
     return new_day_start
 

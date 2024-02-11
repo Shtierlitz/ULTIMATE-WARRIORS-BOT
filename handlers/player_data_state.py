@@ -114,6 +114,10 @@ async def player_data_info(message: types.Message, state: FSMContext):
         all_data = await PlayerData().extract_data(player)
         return await message.reply(all_data)
 
+    if key == '👯Юниты':
+        units = await PlayerData().get_units(player)
+        return await message.reply(units)
+
     # Если ввод не является командой и не соответствует атрибутам игрока
     await state.reset_state()
     return await message.answer('❌ Неизвестная команда. Выбор данных игрока отменён.',

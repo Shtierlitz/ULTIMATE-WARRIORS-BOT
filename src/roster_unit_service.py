@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
-from pprint import pprint
 from typing import Any, Optional
 
-from sqlalchemy.testing import db
+from sqlalchemy import (
+    select,
+)
 
-from settings import Base
 from db_models import (
     Unit,
     UnitMod,
@@ -20,11 +19,11 @@ from db_models import (
     InnerStat,
     SecondaryStat
 )
+from settings import (
+    Base,
+)
 from settings import async_session_maker
 from src.utils import get_new_day_start
-from sqlalchemy import (
-    select,
-)
 
 
 @dataclass
@@ -97,6 +96,7 @@ class UnitSkillData:
 class RosterUnitData:
     player_id: int
     definitionId: str
+    current_stars: str
     currentLevel: int
     currentRarity: int
     currentTier: int
@@ -112,20 +112,47 @@ class RosterUnitData:
     unitStat: Optional[Any] = None
 
 
+
 class RosterDataService:
     def __init__(self, player_id: int = None):
         self.pk = player_id
 
-    async def get_roster_data(self, data: list[json]) -> list[RosterUnitData]:
+    async def get_roster_data(self, data: list[json], localization_data: json) -> list[RosterUnitData]:
         return [
-            await self.get_roster_unit_data(item)
+            await self.get_roster_unit_data(item, localization_data)
             for item in data
         ]
 
-    async def get_roster_unit_data(self, data: json) -> RosterUnitData:
+    async def check_unit_name(self, name: str, data: json) -> str | None:
+        name_to_key = {
+            'VEERS': 'UNIT_VEERS_GENERAL_NAME',
+            'TIEADVANCED': 'UNIT_TIEADVANCED_NAME_V2',
+            'R2D2_LEGENDARY': 'UNIT_R2D2_NAME',
+            'TIEINTERCEPTOR': 'UNIT_TIEINTERCEPTOR_NAME_V2',
+            'MILLENNIUMFALCON': 'UNIT_MILLENNIUMFALCON_NAME_V2',
+            'HOTHLEIA': 'UNIT_HOTHLEIA_NAME_V2',
+        }
+        key = name_to_key.get(name)
+        if not key:
+            key = f'UNIT_{name}_NAME'
+
+        result = data.get(key)
+        return result
+
+    async def get_russian_localized_unit_name(self, definitionId: str, localization_data: json) -> str:
+        name = definitionId.split(':')[0]
+
+        russian_name = await self.check_unit_name(name, localization_data)
+        if not russian_name:
+            print(definitionId, 'not found')
+        return russian_name
+
+    async def get_roster_unit_data(self, data: json, localization_data: json) -> RosterUnitData:
+        russian_name = await self.get_russian_localized_unit_name(data['definitionId'], localization_data)
         return RosterUnitData(
             player_id=self.pk,
-            definitionId=data['definitionId'],
+            definitionId=russian_name if russian_name else data['definitionId'].split(':')[0],
+            current_stars=data['definitionId'].split(':')[1],
             currentLevel=data['currentLevel'],
             currentRarity=data['currentRarity'],
             currentTier=data['currentTier'],
@@ -243,7 +270,8 @@ class CreateUnitService:
         data = self.roster_data
         unit.player_id = self.player_id
         unit.unit_id = data.unit_id
-        unit.definition_id = data.definitionId  # Исправлено на соответствующее имя поля в модели
+        unit.definition_id = data.definitionId
+        unit.current_stars = data.current_stars # Исправлено на соответствующее имя поля в модели
         unit.current_level = data.currentLevel
         unit.current_rarity = data.currentRarity
         unit.current_tier = data.currentTier
@@ -256,7 +284,6 @@ class CreateUnitService:
         unit.skill = await self.get_or_create_unit_skills(unit)
         unit.unit_stat = data.unitStat
         unit.equipped_stat_mod = await self.get_or_create_unit_mods(unit)
-        unit.update_time = datetime.now()
         return unit
 
     async def get_or_create_unit_skills(self, unit: Unit) -> list[UnitSkill]:

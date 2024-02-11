@@ -7,8 +7,9 @@ from create_bot import bot
 
 from settings import async_session_maker
 from src.guild import GuildData
+from src.uint import UnitAggregateService
 from src.utils import get_new_day_start, send_points_message
-from src.player import Player, PlayerData, PlayerScoreService, PlayerPowerService
+from src.player import Player, PlayerData, PlayerScoreService, PlayerPowerService, PlayerService
 from datetime import datetime, timedelta
 from sqlalchemy import and_, select, cast, Integer
 
@@ -83,8 +84,11 @@ async def check_guild_points(*args, **kwargs):
 async def update_db(*args, **kwargs):
     await GuildData().build_db()
     await PlayerData().update_players_data()
+    await PlayerService().update_localization_data()
 
 
+async def update_units(*args, **kwargs):
+    await UnitAggregateService().create_or_update_unit()
 async def final_points_per_month():
     # Check if today is the last day of the month
     tomorrow = datetime.now() + timedelta(days=1)
