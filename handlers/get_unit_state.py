@@ -5,9 +5,9 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 from create_bot import bot
 from handlers.add_player_state import get_keyboard, cancel_state
-from src.decorators import member_check_call, member_admin_state_message_check, member_state_message_check
+from src.decorators import member_check_call, member_state_message_check
 from src.player import PlayerData
-from src.player_units_provider import PlayerUnitsProvider, PlayerUnitDataService
+from src.player_units_provider import PlayerUnitDataService
 
 
 class GetUnit(StatesGroup):
@@ -77,7 +77,7 @@ async def find_unit_character(message: types.Message, state: FSMContext):
         )
         await GetUnit.waiting_for_unit_name.set()
         return
-    units = await PlayerUnitsProvider().convert_unit_data_to_message(units)
+    units = await PlayerUnitDataService().convert_unit_data_to_message(units)
     await bot.send_message(message.chat.id, units, reply_markup=keyboard)
     # Finish the conversation
     await GetUnit.waiting_for_unit_name.set()

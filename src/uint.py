@@ -17,6 +17,7 @@ class UnitAggregateService:
             player_id = await PlayerData().get_today_player_id(ally_code)
             comlink_raw_data = await PlayerService().get_comlink_player(ally_code)
             roster_data = await RosterDataService().get_roster_data(comlink_raw_data['rosterUnit'], localization_data)
+            # pprint(roster_data)
             units = []
             for roster_unit in roster_data:
                 units.append(await CreateUnitService(roster_unit, player_id).update_today_units())

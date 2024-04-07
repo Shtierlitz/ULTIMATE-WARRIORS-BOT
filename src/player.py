@@ -82,10 +82,11 @@ class PlayerService:
         return comlink_data
 
     async def get_comlink_data(self) -> json:
+        latest_version = await self.get_comlink_latest_version()
         post_data = {
             "payload": {
-                f"version": "0.33.8:AudpI2yMRQq0bZjGDf888A",
-                "includePveUnits": True,
+                f"version": latest_version,
+                "includePveUnits": False,
                 "requestSegment": 3
             },
             "enums": False
@@ -101,15 +102,15 @@ class PlayerService:
         post_data = {
             "payload": {
                 f"version": latest_version,
-                "includePveUnits": True,
-                "requestSegment": 2
+                "includePveUnits": False,
+                "requestSegment": 1
             },
             "enums": False
         }
         comlink_player_request = requests.post(f"{API_LINK}/data", json=post_data)
         comlink_player_request.raise_for_status()
         comlink_data = comlink_player_request.json()
-        return comlink_data['statModSet']
+        return comlink_data['category']
 
     async def get_comlink_latest_version(self) -> json:
         post_data = {

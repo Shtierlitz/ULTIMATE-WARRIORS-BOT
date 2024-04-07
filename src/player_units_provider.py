@@ -38,7 +38,6 @@ class PlayerUnitDataService:
         ]
 
     async def get_unit_stats_data(self, unit: RosterUnitData) -> UnitStatsData:
-        print(unit)
         return UnitStatsData(
             name=unit.definitionId,
             stars=await self.create_unit_stars(unit.current_stars),
@@ -100,9 +99,6 @@ class PlayerUnitDataService:
             unit_stats = await self.get_unit_stats_data(unit)
             unit_list.append(unit_stats)
         return unit_list
-
-
-class PlayerUnitsProvider:
 
     async def convert_unit_data_to_message(self, units: list[UnitStatsData]):
         """Конвертирует данные персонажей в сообщение"""

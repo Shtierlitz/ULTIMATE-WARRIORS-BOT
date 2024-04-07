@@ -1,12 +1,12 @@
 # handlers/admin.py
+
+import io
+import os
 from pprint import pprint
 
 from aiogram import types, Dispatcher
 
 from create_bot import bot
-import io
-import os
-
 from src.decorators import (
     member_admin_check,
     member_super_admin_check
@@ -14,7 +14,6 @@ from src.decorators import (
 from src.graphics import get_guild_galactic_power
 from src.guild import GuildData
 from src.player import PlayerData, PlayerService
-from src.player_units_provider import PlayerUnitsProvider
 from src.roster_unit_service import RosterDataService
 from src.uint import UnitAggregateService
 from src.utils import (
@@ -64,7 +63,15 @@ async def admin_command_help(update: [types.Message, types.CallbackQuery]):
             keyboard.add(
                 types.InlineKeyboardButton("☠️ Команды разработчика ☠️", callback_data='developer'))
             await message_or_call.answer("👮🏻‍♂️ Админ панель 👮🏻", reply_markup=keyboard)
-            # pprint(await RosterDataService().get_russian_localized_unit_name(BOBAFETT))
+            # pprint(await RosterDataService().get_russian_localized_unit_name('BOBAFETT')
+            # data_1 = await PlayerService().get_comlink_data()
+            await PlayerService().update_localization_data()
+            # data_2 = await PlayerService().get_comlink_stat_mod_data()
+            # pprint(data_2)
+            # for i in data_2:
+            #     if i['id'] == 451:
+            #         pprint(i)
+            # print('not found')
         else:
             await message_or_call.reply(f"❌У вас нет прав для использования этой команды.❌\nОбратитесь к офицеру.")
     else:
@@ -79,6 +86,7 @@ async def command_unit_db_extra(call: types.CallbackQuery):
     await bot.send_message(call.message.chat.id,
                            "ОБаза данных обновляется в фоне.\nМожно приступать к работе.")
     await UnitAggregateService().create_or_update_unit()
+
 
 @member_admin_check
 async def command_db_extra(call: types.CallbackQuery):

@@ -112,7 +112,6 @@ class RosterUnitData:
     unitStat: Optional[Any] = None
 
 
-
 class RosterDataService:
     def __init__(self, player_id: int = None):
         self.pk = player_id
@@ -284,6 +283,7 @@ class CreateUnitService:
         unit.skill = await self.get_or_create_unit_skills(unit)
         unit.unit_stat = data.unitStat
         unit.equipped_stat_mod = await self.get_or_create_unit_mods(unit)
+
         return unit
 
     async def get_or_create_unit_skills(self, unit: Unit) -> list[UnitSkill]:
@@ -344,6 +344,7 @@ class CreateUnitService:
             )
             for item in self.roster_data.equippedStatMod
         ]
+
         return data
 
     async def create_costs(self, data: CostData, model: Base) -> int:
